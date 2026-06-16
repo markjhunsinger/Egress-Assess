@@ -166,6 +166,6 @@ The following protocols verify that data arrived on the server intact (detects D
 - **SFTP conflicts with sshd on port 22.** Two options: move sshd to another port (e.g. 2222) so SFTP can use 22, or use `--sftp-port 2222` to run Egress-Assess SFTP on 2222 instead.
 - **FTP passive mode requires the server to advertise its public IP.** On EC2 this is auto-detected via instance metadata. On other NAT'd hosts, pass `--ip <public-ip>` to the server command so PASV responses contain the correct address.
 - **`sudo -E`** is required when running inside a virtualenv so that `sudo` inherits the venv `PATH`. Alternatively, invoke the venv Python directly: `sudo egress-venv/bin/python3 Egress-Assess.py`.
-- **ICMP, DNS, dns_resolved** have no return channel so data integrity cannot be verified.
+- **ICMP and dns_resolved** have no return channel so data integrity cannot be verified. DNS TXT mode does verify integrity via the DNS reply.
 - **SMTP** verification may produce false negatives if an intermediate relay rewrites message headers significantly.
 - DNS and ICMP clients require root for raw socket access.
