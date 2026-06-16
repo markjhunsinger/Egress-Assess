@@ -110,7 +110,7 @@ sudo -E python3 Egress-Assess.py --client smb --ip 10.0.0.1 --username testuser 
 | http | 80 | |
 | https | 443 | Requires `server.pem` on server |
 | smtp | 25 | |
-| sftp | 22 | Username/password required; use `--sftp-port 2222` to avoid SSH conflict |
+| sftp | 22 | Username/password required; conflicts with sshd on port 22 — either move sshd to another port, or use `--sftp-port 2222` |
 | smb | 445 | Use `--smb-port 8445` on AWS (port 445 blocked at hypervisor) |
 | dns | 53 | Requires root; data sent in DNS TXT queries |
 | dns_resolved | 53 | Requires root; data sent as DNS A record subdomains |
@@ -163,6 +163,7 @@ The following protocols verify that data arrived on the server intact (detects D
 ## Known Limitations
 
 - **AWS blocks port 445** at the hypervisor level regardless of security group rules. Use `--smb-port 8445` (or any non-445 port) as a workaround.
+- **SFTP conflicts with sshd on port 22.** Two options: move sshd to another port (e.g. 2222) so SFTP can use 22, or use `--sftp-port 2222` to run Egress-Assess SFTP on 2222 instead.
 - **FTP passive mode requires the server to advertise its public IP.** On EC2 this is auto-detected via instance metadata. On other NAT'd hosts, pass `--ip <public-ip>` to the server command so PASV responses contain the correct address.
 - **`sudo -E`** is required when running inside a virtualenv so that `sudo` inherits the venv `PATH`. Alternatively, invoke the venv Python directly: `sudo egress-venv/bin/python3 Egress-Assess.py`.
 - **ICMP, DNS, dns_resolved** have no return channel so data integrity cannot be verified.
