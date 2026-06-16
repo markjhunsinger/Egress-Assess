@@ -9,6 +9,7 @@ import argparse
 import os
 import random
 import re
+import socket
 import string
 import sys
 import time
@@ -171,3 +172,32 @@ def writeout_text_data(incoming_data):
         out_file.write(incoming_data)
 
     return file_name
+
+
+def check_port_available(port):
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    try:
+        s.bind(('0.0.0.0', port))
+        return True
+    except OSError:
+        return False
+    finally:
+        s.close()
+
+
+def preflight_server_sweep(server_list):
+    errors = []
+    cert_path = os.path.join(ea_path(), 'server.pem')
+
+    needs_cert = any(s.protocol == 'https' for s in server_list)
+    if needs_cert and not os.path.isfile(cert_path):
+        errors.append(f'server.pem not found at {cert_path} (required for https)')
+
+    for server in server_list:
+        if not hasattr(server, 'port'):
+            continue  # ICMP — no port
+        if not check_port_available(server.port):
+            errors.append(f'Port {server.port} in use ({server.protocol})')
+
+    return errors
