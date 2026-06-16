@@ -41,7 +41,8 @@ class Client:
             else:
                 total_packets = (len(data_to_transmit) / self.length) + 1
 
-            print('[*] Packet Number/Total Packets:        ' + str(packet_number) + "/" + str(total_packets))
+            sys.stdout.write(f'\r[*] Packet {packet_number}/{int(total_packets)}   ')
+            sys.stdout.flush()
 
             # Craft the packet with scapy
             try:
@@ -57,4 +58,5 @@ class Client:
             byte_reader += self.length
             packet_number += 1
 
+        print()
         return

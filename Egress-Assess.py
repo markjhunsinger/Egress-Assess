@@ -95,6 +95,7 @@ if __name__ == "__main__":
             port_str = f'on port {server.port}' if hasattr(server, 'port') else '(raw socket)'
             print(f'[+] {server.protocol} server started {port_str}')
 
+        time.sleep(1)
         print('\n[*] All servers running. Press Ctrl+C to stop.')
         try:
             while True:
@@ -153,11 +154,11 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             print('\n[!] Sweep interrupted by user.')
 
-        print('\n' + '=' * 60)
+        print('\n' + '=' * 70)
         print('[*] Sweep complete.\n')
-        col1, col2 = 10, 12
-        print(f'{"Protocol":<{col1}} {"Datatype":<{col2}} {"Result"}')
-        print(f'{"-"*col1} {"-"*col2} {"-"*8}')
+        col1, col2 = 14, 12
+        print(f'    {"Protocol":<{col1}} {"Datatype":<{col2}} {"Result"}')
+        print(f'    {"-"*col1} {"-"*col2} {"-"*8}')
         succeeded = 0
         for proto_name, dtype_cli, success, err in sorted(results):
             status = 'SUCCESS' if success else f'FAILED: {err}'

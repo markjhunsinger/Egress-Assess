@@ -66,7 +66,8 @@ class Client:
                            id=15, opcode=0, qd=[DNSQR(
                             qname=encoded_data, qtype="TXT")], aa=1, qr=0),
                          verbose=False)
-                    print('Sending data...        ' + str(packet_number) + "/" + str(total_packets))
+                    sys.stdout.write(f'\r[*] Packet {packet_number}/{int(total_packets)}   ')
+                    sys.stdout.flush()
                     packet_number += 1
                     byte_reader += self.length
 
@@ -90,7 +91,8 @@ class Client:
                     self.current_total = packet_number + packet_diff
                     check_total = False
 
-                print('[*] Packet Number/Total Packets:        ' + str(packet_number) + "/" + str(self.current_total))
+                sys.stdout.write(f'\r[*] Packet {packet_number}/{int(self.current_total)}   ')
+                sys.stdout.flush()
 
                 # Craft the packet with scapy
                 try:

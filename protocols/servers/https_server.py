@@ -20,9 +20,7 @@ class Server:
     def serve(self):
         try:
             print(f'[*] Starting an HTTPS server on port {self.port}.')
-            # Bind to all interfaces
             Thread(target=self.serve_on_port).start()
-            print('[*] The server is running.')
         # Handle keyboard interrupts
         except KeyboardInterrupt:
             print('[*] Shutting down the HTTPS server.')

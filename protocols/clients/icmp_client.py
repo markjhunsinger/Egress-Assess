@@ -59,7 +59,8 @@ class Client:
                 encoded_data = base64.b64encode((self.file_transfer +
                                                 ".:::-989-:::." + (data_to_transmit[byte_reader:byte_reader + self.length]).decode('utf-8')).encode())
 
-            print('[*] Packet Number/Total Packets:        ' + str(packet_number) + "/" + str(total_packets))
+            sys.stdout.write(f'\r[*] Packet {packet_number}/{int(total_packets)}   ')
+            sys.stdout.flush()
 
             # Craft the packet with scapy
             try:
@@ -70,3 +71,5 @@ class Client:
             # Increment counters
             byte_reader += self.length
             packet_number += 1
+
+        print()

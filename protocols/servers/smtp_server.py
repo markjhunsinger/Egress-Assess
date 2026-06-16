@@ -27,14 +27,13 @@ class Server:
         handler = smtp_class.CustomSMTPHandler(exfil_directory.rstrip('/'))
         controller = Controller(handler, hostname='0.0.0.0', port=self.port)
 
+        print(f'[*] Started an SMTP server on port {self.port}.')
         try:
             controller.start()
         except socket.error:
             print(f'[*] Error: Port {self.port} is currently in use.')
             print('[*] Error: Please re-start when not in use.')
             sys.exit()
-
-        print(f'[*] Started an SMTP server on port {self.port}.')
 
         try:
             while True:
