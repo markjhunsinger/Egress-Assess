@@ -137,8 +137,11 @@ if __name__ == "__main__":
                 except Exception as e:
                     for proto in protocols:
                         combo_num += 1
-                        results.append((proto.protocol, dtype.cli, False, f'Data generation failed: {e}'))
+                        results.append((proto.protocol, dtype.cli, 'blocked', f'Data generation failed: {e}'))
                     continue
+
+                # Protocols that verify data integrity end-to-end
+                _verified_protos = {'http', 'https', 'ftp', 'sftp', 'smtp'}
 
                 # Truncate to 10KB in sweep — goal is connectivity, not throughput.
                 # DNS gets a tighter cap (5KB) because it's packet-per-chunk.
@@ -153,16 +156,20 @@ if __name__ == "__main__":
                         else:
                             data = chunk
                         proto.transmit(data)
-                        results.append((proto.protocol, dtype.cli, True, ''))
+                        status = 'verified' if proto.protocol in _verified_protos else 'unverified'
+                        results.append((proto.protocol, dtype.cli, status, ''))
                     except SystemExit:
-                        results.append((proto.protocol, dtype.cli, False, 'sys.exit() called'))
+                        results.append((proto.protocol, dtype.cli, 'blocked', 'sys.exit() called'))
                     except Exception as e:
-                        results.append((proto.protocol, dtype.cli, False, str(e)))
+                        err = str(e)
+                        status = 'tampered' if err.startswith('Integrity check failed') else 'blocked'
+                        results.append((proto.protocol, dtype.cli, status, err))
         except KeyboardInterrupt:
             print('\n[!] Sweep interrupted by user.')
 
         # ANSI colors
         G = '\033[92m'   # green
+        Y = '\033[93m'   # yellow
         R = '\033[91m'   # red
         B = '\033[1m'    # bold
         C = '\033[96m'   # cyan
@@ -171,8 +178,8 @@ if __name__ == "__main__":
 
         # Build result lookup and collect unique protocols/datatypes
         result_map = {}
-        for proto_name, dtype_cli, success, err in results:
-            result_map.setdefault(proto_name, {})[dtype_cli] = (success, err)
+        for proto_name, dtype_cli, status, err in results:
+            result_map.setdefault(proto_name, {})[dtype_cli] = (status, err)
 
         _display = {
             'dns': 'DNS (TXT)', 'dns_resolved': 'DNS (A)',
@@ -184,9 +191,9 @@ if __name__ == "__main__":
         protocols = sorted(result_map.keys())
         dtypes = sorted({d for p in result_map.values() for d in p})
 
-        # Column widths
+        # Column widths — cells show up to "Unverified" (10 chars)
         p_col = max(len(pname(p)) for p in protocols) + 2
-        d_col = max(max(len(d) for d in dtypes), 6) + 2
+        d_col = max(max(len(d) for d in dtypes), 10) + 2
 
         width = p_col + (d_col + 1) * len(dtypes) + 2
         bar = '═' * width
@@ -209,30 +216,38 @@ if __name__ == "__main__":
             row = f'{B}{pname(proto):<{p_col}}{X}'
             for d in dtypes:
                 if d in result_map[proto]:
-                    ok, _ = result_map[proto][d]
-                    if ok:
-                        row += f' {G}{"Allowed":<{d_col}}{X}'
+                    st, _ = result_map[proto][d]
+                    if st == 'verified':
+                        row += f' {G}{"Allowed ✓":<{d_col}}{X}'
                         succeeded += 1
+                    elif st == 'unverified':
+                        row += f' {Y}{"Allowed ~":<{d_col}}{X}'
+                        succeeded += 1
+                    elif st == 'tampered':
+                        row += f' {Y}{"Tampered":<{d_col}}{X}'
                     else:
                         row += f' {R}{"Blocked":<{d_col}}{X}'
                 else:
                     row += f' {DIM}{"N/A":<{d_col}}{X}'
             print(row)
 
-        # Failures detail
-        failures = [(p, d, e) for p, d, ok, e in
-                    [(p, d, *result_map[p][d]) for p in protocols for d in dtypes if d in result_map[p]]
-                    if not ok]
-        if failures:
-            print(f'\n{B}Failures{X}')
+        print(f'\n{DIM}  ✓ = verified intact   ~ = allowed, no verification   Tampered = modified in transit{X}')
+
+        # Failures / tampered detail
+        issues = [(p, d, st, e) for p, d, st, e in
+                  [(p, d, *result_map[p][d]) for p in protocols for d in dtypes if d in result_map[p]]
+                  if st in ('blocked', 'tampered')]
+        if issues:
+            print(f'\n{B}Issues{X}')
             print(DIM + '─' * 50 + X)
-            for p, d, e in failures:
+            for p, d, st, e in issues:
+                label = f'{R}Blocked{X}' if st == 'blocked' else f'{Y}Tampered{X}'
                 truncated = e[:80] + '…' if len(e) > 80 else e
-                print(f'  {R}{pname(p)}{X} / {d.upper()}  {DIM}→{X}  {truncated}')
+                print(f'  {label}  {pname(p)} / {d.upper()}  {DIM}→{X}  {truncated}')
 
         total = len(results)
         pct = int(succeeded / total * 100) if total else 0
-        print(f'\n{B}{succeeded}/{total}{X} combinations succeeded {DIM}({pct}%){X}\n')
+        print(f'\n{B}{succeeded}/{total}{X} combinations allowed {DIM}({pct}%){X}\n')
         sys.exit()
 
     elif cli_parsed.server is not None:
