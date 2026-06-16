@@ -32,6 +32,7 @@ if __name__ == "__main__":
     logging.getLogger('mail.log').setLevel(logging.WARNING)
     logging.getLogger('aiosmtpd.smtp').setLevel(logging.WARNING)
     logging.getLogger('asyncio').setLevel(logging.WARNING)
+    logging.getLogger('paramiko').setLevel(logging.WARNING)
 
     helpers.title_screen()
 
@@ -131,7 +132,7 @@ if __name__ == "__main__":
         interrupted = False
         try:
             for dtype in datatypes:
-                print(f'\n[*] Generating {dtype.description} data...')
+                print(f'\n[*] Generating {dtype.description or dtype.cli} data...')
                 try:
                     generated_data = dtype.generate_data()
                 except Exception as e:
