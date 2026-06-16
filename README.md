@@ -56,6 +56,7 @@ The client prints a colour-coded matrix showing **Allowed** / **Blocked** per pr
 |------|---------|-------------|
 | `--sftp-port` | 22 | Override SFTP port (port 22 conflicts with SSH) |
 | `--smb-port` | 445 | Override SMB port (port 445 is blocked by AWS and some ISPs) |
+| `--smtp-port` | 25 | Override SMTP port (use 587 to test submission port) |
 
 ---
 

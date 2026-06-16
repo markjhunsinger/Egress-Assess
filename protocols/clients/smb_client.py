@@ -19,6 +19,8 @@ class Client:
             self.port = 445
         else:
             self.port = cli_object.client_port
+        self.username = cli_object.username or ''
+        self.password = cli_object.password or ''
         if cli_object.file is None:
             self.file_transfer = False
         else:
@@ -46,7 +48,7 @@ class Client:
 
         try:
             conn = SMBConnection(self.remote_server, self.remote_server, sess_port=self.port, timeout=10)
-            conn.login('', '')
+            conn.login(self.username, self.password)
 
             with open(local_path, 'rb') as fh:
                 conn.putFile('TRANSFER', remote_name, fh.read)
