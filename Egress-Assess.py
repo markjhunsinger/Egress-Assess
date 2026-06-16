@@ -25,6 +25,10 @@ def _run_server(server):
 if __name__ == "__main__":
 
     logging.getLogger('scapy.runtime').setLevel(logging.ERROR)
+    logging.getLogger('pyftpdlib').setLevel(logging.WARNING)
+    logging.getLogger('mail.log').setLevel(logging.WARNING)
+    logging.getLogger('aiosmtpd.smtp').setLevel(logging.WARNING)
+    logging.getLogger('asyncio').setLevel(logging.WARNING)
 
     helpers.title_screen()
 
