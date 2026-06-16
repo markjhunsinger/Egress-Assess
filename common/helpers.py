@@ -20,7 +20,8 @@ def cli_parser():
     parser.add_argument('-h', '-?', '--h', '-help', '--help', action="store_true", help=argparse.SUPPRESS)
 
     protocols = parser.add_argument_group('Client Protocol Options')
-    protocols.add_argument('--client', default=None, metavar='[http]', help='Extract data over the specified protocol.')
+    protocols.add_argument('--client', default=None, metavar='[http]', nargs='?',
+                           const='all', help='Extract data over the specified protocol. Omit value with --sweep to use all.')
     protocols.add_argument('--client-port', default=None, metavar='34567', type=int, help='Non-standard port to connect over.')
     protocols.add_argument('--list-clients', default=False, action='store_true', help='List all supported client protocols.')
     protocols.add_argument('--ip', metavar='192.168.1.2', default=None, help='IP to extract data to.')
@@ -30,7 +31,8 @@ def cli_parser():
     actors.add_argument('--list-actors', default=False, action='store_true', help='List all supported malware, APT group modules')
 
     servers = parser.add_argument_group('Server Protocol Options')
-    servers.add_argument('--server', default=None, metavar='[http]', help='Create a server for the specified protocol.')
+    servers.add_argument('--server', default=None, metavar='[http]', nargs='?',
+                         const='all', help='Create a server for the specified protocol. Omit value with --sweep to use all.')
     servers.add_argument('--server-port', default=None, metavar='[80]', help='Specify a non-standard port for the specified protocol.')
     servers.add_argument('--list-servers', default=False, action='store_true', help='Lists all supported server protocols.')
 
@@ -47,6 +49,10 @@ def cli_parser():
     data_content.add_argument('--data-size', default=1, type=int, help='Number of megs to send, default is 1MB')
     data_content.add_argument('--list-datatypes', default=False, action='store_true', help='List all supported data types that can be generated.')
 
+    sweep_options = parser.add_argument_group('Sweep Mode')
+    sweep_options.add_argument('--sweep', default=False, action='store_true',
+                               help='Run in sweep mode: all protocols and datatypes.')
+
     args = parser.parse_args()
 
     if args.h:
@@ -60,6 +66,18 @@ def cli_parser():
             a username and password!'.replace('    ', ''))
         print('[*] Error: Please re-run and provide the required info!')
         sys.exit(1)
+
+    if args.sweep:
+        if args.server is not None and (args.username is None or args.password is None):
+            print('[*] Error: Sweep server mode requires --username and --password.')
+            sys.exit(1)
+        if args.client is not None and (args.ip is None or args.username is None or args.password is None):
+            print('[*] Error: Sweep client mode requires --ip, --username, and --password.')
+            sys.exit(1)
+        if args.server is None and args.client is None:
+            print('[*] Error: --sweep requires --server or --client.')
+            sys.exit(1)
+        return args
 
     if args.client and args.ip is None:
         print('[*] Error: You said to act like a client, but provided no ip')
