@@ -7,11 +7,14 @@
 
 
 import logging
+import os
 import sys
 import threading
 import time
 from common import helpers
 from common import orchestra
+
+os.umask(0o022)
 
 def _run_server(server):
     try:
