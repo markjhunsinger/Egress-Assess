@@ -42,7 +42,7 @@ def cli_parser():
     ftp_options.add_argument('--password', metavar='pass123', default=None, help='Password for FTP server authentication.')
 
     smb_options = parser.add_argument_group('SMB Options')
-    smb_options.add_argument('--no-smb2', default=True, action='store_false', help='Disable SMB v2 support.')
+    smb_options.add_argument('--no-smb2', dest='smb2support', default=True, action='store_false', help='Disable SMB v2 support.')
 
     data_content = parser.add_argument_group('Data Content Options')
     data_content.add_argument('--file', default=None, metavar='/tmp/test.txt', help='Path to file to extract.')

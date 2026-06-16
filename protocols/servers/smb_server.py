@@ -12,7 +12,7 @@ class Server:
         else:
             self.port = 445
 
-        self.smb2support = cli_object.no_smb2
+        self.smb2support = cli_object.smb2support
         self.username = False
         self.password = False
 
