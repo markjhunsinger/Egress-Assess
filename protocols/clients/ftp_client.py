@@ -36,7 +36,7 @@ class Client:
     def transmit(self, data_to_transmit):
 
         try:
-            ftp = FTP(timeout=10)
+            ftp = FTP(timeout=30)
             ftp.connect(self.remote_server, self.port)
         except socket.gaierror as e:
             raise RuntimeError(f'Cannot connect to FTP server {self.remote_server}:{self.port} - {e}')
