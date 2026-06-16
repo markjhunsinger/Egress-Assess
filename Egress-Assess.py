@@ -33,7 +33,7 @@ if __name__ == "__main__":
     logging.getLogger('mail.log').setLevel(logging.WARNING)
     logging.getLogger('aiosmtpd.smtp').setLevel(logging.WARNING)
     logging.getLogger('asyncio').setLevel(logging.WARNING)
-    logging.getLogger('paramiko').setLevel(logging.WARNING)
+    logging.getLogger('paramiko').setLevel(logging.CRITICAL)
 
     helpers.title_screen()
 
