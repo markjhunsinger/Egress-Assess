@@ -5,3 +5,4 @@ dnspython>=2.6.0
 dnslib>=0.9.23
 pyftpdlib>=1.5.7
 impacket>=0.11.0
+pytest>=8.0.0

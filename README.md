@@ -5,7 +5,7 @@ A tool for testing egress data detection capabilities. Run a server on one host 
 ## Requirements
 
 - Python 3.12+
-- Root / Administrator privileges (required for ICMP and DNS raw socket clients)
+- Root privileges (required for ICMP and DNS raw socket clients)
 
 ## Setup
 
@@ -13,7 +13,7 @@ A tool for testing egress data detection capabilities. Run a server on one host 
 
 ```bash
 python3 -m venv egress-venv
-source egress-venv/bin/activate   # Windows: egress-venv\Scripts\activate
+source egress-venv/bin/activate
 pip install -r requirements.txt
 ```
 
