@@ -35,8 +35,9 @@ class Server:
                 '/server.pem'
             server = threaded_http.ThreadingHTTPServer(
                 ('0.0.0.0', self.port), base_handler.GetHandler)
-            server.socket = ssl.wrap_socket(
-                server.socket, keyfile=None, certfile=cert_path, server_side=True)
+            ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            ctx.load_cert_chain(certfile=cert_path)
+            server.socket = ctx.wrap_socket(server.socket, server_side=True)
             server.serve_forever()
         except socket.error:
             print(f'[*] Error: Port {self.port} is currently in use.')
