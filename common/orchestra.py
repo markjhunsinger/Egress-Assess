@@ -7,8 +7,6 @@ This is the conductor which controls everything
 import glob
 import importlib.util
 import sys
-from commandcontrol.malware import *
-from commandcontrol.apt import *
 from protocols.servers import *
 from protocols.clients import *
 from datatypes import *
@@ -26,12 +24,9 @@ def _load_module(path):
 class Conductor:
 
     def __init__(self):
-        # Create dictionaries of supported modules
-        # empty until stuff loaded into them
         self.client_protocols = {}
         self.server_protocols = {}
         self.datatypes = {}
-        self.actor_modules = {}
 
     def load_client_protocols(self, command_line_object):
         for name in glob.glob('protocols/clients/*.py'):
@@ -51,13 +46,3 @@ class Conductor:
             if name.endswith(".py") and ("__init__" not in name):
                 loaded_datatypes = _load_module(name)
                 self.datatypes[name] = loaded_datatypes.Datatype(command_line_object)
-
-    def load_actors(self, command_line_object):
-        for name in glob.glob('commandcontrol/malware/*.py'):
-            if name.endswith(".py") and ("__init__" not in name):
-                loaded_actors = _load_module(name)
-                self.actor_modules[name] = loaded_actors.Actor(command_line_object)
-        for name in glob.glob('commandcontrol/apt/*.py'):
-            if name.endswith(".py") and ("__init__" not in name):
-                loaded_actors = _load_module(name)
-                self.actor_modules[name] = loaded_actors.Actor(command_line_object)

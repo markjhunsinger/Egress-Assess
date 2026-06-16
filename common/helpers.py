@@ -27,10 +27,6 @@ def cli_parser():
     protocols.add_argument('--list-clients', default=False, action='store_true', help='List all supported client protocols.')
     protocols.add_argument('--ip', metavar='192.168.1.2', default=None, help='IP to extract data to.')
 
-    actors = parser.add_argument_group('Actor Emulation')
-    actors.add_argument('--actor', default=None, metavar='[zeus]', help='Emulate the specified actor when doing C2 comms to server.')
-    actors.add_argument('--list-actors', default=False, action='store_true', help='List all supported malware, APT group modules')
-
     servers = parser.add_argument_group('Server Protocol Options')
     servers.add_argument('--server', default=None, metavar='[http]', nargs='?',
                          const='all', help='Create a server for the specified protocol. Omit value with --sweep to use all.')
@@ -113,11 +109,6 @@ def cli_parser():
             a server or client!".replace('    ', ''))
         print('[*] Error: Please re-run and provide an action to perform!')
         parser.print_help()
-        sys.exit(1)
-
-    if args.actor is not None and args.ip is None:
-        print('[*] Error: You did not provide an IP to egress data to!')
-        print('[*] Error: Please re-run and provide an ip!')
         sys.exit(1)
 
     return args
