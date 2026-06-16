@@ -153,7 +153,7 @@ if __name__ == "__main__":
                     continue
 
                 # Protocols that verify data integrity end-to-end
-                _verified_protos = {'http', 'https', 'ftp', 'sftp', 'smtp', 'smb'}
+                _verified_protos = {'http', 'https', 'ftp', 'sftp', 'smtp', 'smb', 'dns'}
 
                 # Truncate to 10KB in sweep — goal is connectivity, not throughput.
                 # DNS gets a tighter cap (5KB) because it's packet-per-chunk.

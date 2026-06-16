@@ -7,6 +7,8 @@ http://blog.cobaltstrike.com/2013/06/20/thatll-never-work-we-dont-allow-port-53-
 """
 
 import base64
+import hashlib
+import re
 import socket
 import sys
 from common import helpers
@@ -42,6 +44,9 @@ class Client:
         byte_reader = 0
         check_total = False
         packet_number = 1
+
+        data_bytes = data_to_transmit if isinstance(data_to_transmit, bytes) else data_to_transmit.encode()
+        expected_hash = hashlib.sha256(data_bytes).hexdigest()
 
         # Determine if sending via IP or domain name
         if helpers.validate_ip(self.remote_server):
@@ -126,4 +131,22 @@ class Client:
                 if final_packet:
                     break
                 '''
+        else:
+            verify_resp = sr1(
+                IP(dst=final_destination)/UDP()/DNS(
+                    id=15, opcode=0,
+                    qd=[DNSQR(qname=b'EAVERIFY', qtype='TXT')], aa=1, qr=0),
+                verbose=False, timeout=5)
+            if verify_resp and verify_resp.haslayer(DNS) and verify_resp[DNS].ancount > 0:
+                rdata = verify_resp[DNS].an.rdata
+                if isinstance(rdata, bytes):
+                    m = re.search(rb'[0-9a-f]{64}', rdata)
+                    if m:
+                        server_hash = m.group(0).decode()
+                        if server_hash != expected_hash:
+                            raise RuntimeError(
+                                f'Integrity check failed: '
+                                f'client={expected_hash[:16]}… server={server_hash[:16]}…')
+                        return
+            raise RuntimeError('no verification response from DNS server')
         return

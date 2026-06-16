@@ -17,6 +17,7 @@ and write the output to a file:
 
 """
 
+import hashlib
 import time
 import struct
 import socketserver
@@ -47,6 +48,7 @@ FILE_DICT = {}
 FILE_NAME = ""
 FILE_STATUS = "0"
 LAST_PACKET = ""
+DATA_BUFFER = []  # accumulates received text-mode bytes for SHA256 verification
 
 
 def set_file_name():
@@ -114,10 +116,11 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
 
     @staticmethod
     def clear_globals():
-        global FILE_DICT, FILE_NAME, LAST_PACKET
+        global FILE_DICT, FILE_NAME, LAST_PACKET, DATA_BUFFER
         FILE_DICT = {}
         FILE_STATUS = "0"
         LAST_PACKET = ""
+        DATA_BUFFER.clear()
         set_file_name()
 
     def get_data(self):
@@ -175,19 +178,26 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
         sys.stdout.flush()
 
     def handle_dns_txt(self, encoded_qname):
-        global FILE_DICT, FILE_STATUS
+        global FILE_DICT, FILE_STATUS, DATA_BUFFER
+
+        # Verification query — return SHA256 of buffered data as TXT reply
+        if encoded_qname.rstrip('.') == 'EAVERIFY':
+            server_hash = hashlib.sha256(b''.join(DATA_BUFFER)).hexdigest()
+            DATA_BUFFER.clear()
+            return server_hash
 
         try:
             if self.ENDFILESTRING in encoded_qname:
                 file_name = encoded_qname.split(self.ENDFILESTRING)[1].rstrip('.')
                 self.write_file(file_name)
-                return
+                return None
 
             decoded = base64.b64decode(encoded_qname)
 
             if self.preamble not in decoded:
+                DATA_BUFFER.append(decoded)
                 self.write_file(FILE_NAME, 'a', data=decoded.decode('latin-1'))
-                return
+                return None
 
             parts = decoded.split(self.preamble)
             FILE_STATUS = self.decode_file_status(parts[0])
@@ -200,7 +210,7 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
         except Exception as e:
             print(f'[-] handle_dns_txt Error: {e} {encoded_qname}')
 
-        return
+        return None
 
     def handle_dns_resolved(self, encoded_qname):
         global FILE_DICT, FILE_NAME, LAST_PACKET, FILE_STATUS
@@ -250,7 +260,10 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
             for question in request.questions:
                 qname = str(question.qname)
                 if qtype == 'TXT':
-                    self.handle_dns_txt(qname)
+                    txt_reply = self.handle_dns_txt(qname)
+                    if txt_reply is not None:
+                        reply.add_answer(RR(rname=question.qname, rtype=QTYPE.TXT,
+                                           rdata=TXT([txt_reply.encode()])))
                 if qtype == 'A':
                     self.handle_dns_resolved(qname)
 
