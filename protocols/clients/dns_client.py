@@ -132,7 +132,8 @@ class Client:
         else:
             # Use a real UDP socket so the OS can receive the reply (raw scapy
             # sockets don't reliably capture inbound packets on all platforms).
-            verify_query = DNSRecord.question('EAVERIFY', 'TXT')
+            packets_sent = packet_number - 1
+            verify_query = DNSRecord.question(f'EAVERIFY{packets_sent}', 'TXT')
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             sock.settimeout(5)
             try:

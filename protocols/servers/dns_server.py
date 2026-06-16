@@ -180,8 +180,17 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
     def handle_dns_txt(self, encoded_qname):
         global FILE_DICT, FILE_STATUS, DATA_BUFFER
 
-        # Verification query — return SHA256 of buffered data as TXT reply
-        if encoded_qname.rstrip('.') == 'EAVERIFY':
+        # Verification query — return SHA256 of buffered data as TXT reply.
+        # Name is EAVERIFY{N} where N is the number of data packets the client sent.
+        # We wait until DATA_BUFFER has N entries so all handler threads have finished.
+        stripped = encoded_qname.rstrip('.')
+        if stripped.startswith('EAVERIFY'):
+            count_str = stripped[8:]
+            if count_str.isdigit():
+                expected_count = int(count_str)
+                deadline = time.time() + 3.0
+                while len(DATA_BUFFER) < expected_count and time.time() < deadline:
+                    time.sleep(0.01)
             server_hash = hashlib.sha256(b''.join(DATA_BUFFER)).hexdigest()
             DATA_BUFFER.clear()
             return server_hash
