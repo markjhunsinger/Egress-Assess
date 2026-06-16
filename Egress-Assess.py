@@ -125,6 +125,8 @@ if __name__ == "__main__":
 
         datatypes = list(the_conductor.datatypes.values())
         results = []
+        total_combos = len(protocols) * len(datatypes)
+        combo_num = 0
 
         interrupted = False
         try:
@@ -134,13 +136,15 @@ if __name__ == "__main__":
                     generated_data = dtype.generate_data()
                 except Exception as e:
                     for proto in protocols:
+                        combo_num += 1
                         results.append((proto.protocol, dtype.cli, False, f'Data generation failed: {e}'))
                     continue
 
                 # Truncate to 10KB in sweep — goal is connectivity, not throughput.
                 # DNS gets a tighter cap (5KB) because it's packet-per-chunk.
                 for proto in protocols:
-                    print(f'[*] Transmitting {dtype.cli} via {proto.protocol}...')
+                    combo_num += 1
+                    print(f'[{combo_num}/{total_combos}] {dtype.cli.upper()} via {proto.protocol.upper()}...')
                     try:
                         cap = 5000 if proto.protocol in ('dns', 'dns_resolved') else 10000
                         chunk = generated_data[:cap]
