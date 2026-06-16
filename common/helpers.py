@@ -69,14 +69,20 @@ def cli_parser():
         sys.exit(1)
 
     if args.sweep:
+        if args.server is not None and args.client is not None:
+            print('[*] Error: --sweep accepts --server or --client, not both.')
+            sys.exit(1)
+        if args.server is None and args.client is None:
+            print('[*] Error: --sweep requires --server or --client.')
+            sys.exit(1)
+        if args.server_port is not None:
+            print('[*] Error: --server-port cannot be used with --sweep (all default ports are used).')
+            sys.exit(1)
         if args.server is not None and (args.username is None or args.password is None):
             print('[*] Error: Sweep server mode requires --username and --password.')
             sys.exit(1)
         if args.client is not None and (args.ip is None or args.username is None or args.password is None):
             print('[*] Error: Sweep client mode requires --ip, --username, and --password.')
-            sys.exit(1)
-        if args.server is None and args.client is None:
-            print('[*] Error: --sweep requires --server or --client.')
             sys.exit(1)
         return args
 
@@ -176,7 +182,6 @@ def writeout_text_data(incoming_data):
 
 def check_port_available(port):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
         s.bind(('0.0.0.0', port))
         return True
