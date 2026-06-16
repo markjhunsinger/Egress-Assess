@@ -50,7 +50,7 @@ class Datatype:
             pos += 2
 
         # Calculate check digit
-        checkdigit = ((_sum / 10 + 1) * 10 - _sum) % 10
+        checkdigit = ((_sum // 10 + 1) * 10 - _sum) % 10
         ccnumber.append(str(checkdigit))
         return ''.join(ccnumber)
 
