@@ -8,8 +8,19 @@
 
 import logging
 import sys
+import threading
+import time
 from common import helpers
 from common import orchestra
+
+def _run_server(server):
+    try:
+        server.serve()
+    except SystemExit:
+        pass
+    except Exception as e:
+        print(f'[!] {server.protocol} server error: {e}')
+
 
 if __name__ == "__main__":
 
@@ -52,7 +63,76 @@ if __name__ == "__main__":
                   datatype_module.description + ")")
         sys.exit()
 
-    if cli_parsed.server is not None:
+    if cli_parsed.sweep and cli_parsed.server is not None:
+        the_conductor.load_server_protocols(cli_parsed)
+        servers = list(the_conductor.server_protocols.values())
+
+        errors = helpers.preflight_server_sweep(servers)
+        if errors:
+            print('[!] Pre-flight checks failed:')
+            for err in errors:
+                print(f'    [-] {err}')
+            sys.exit(1)
+
+        print('[*] Pre-flight checks passed. Starting all servers...\n')
+        for server in servers:
+            t = threading.Thread(target=_run_server, args=[server], daemon=True)
+            t.start()
+            port_str = f'on port {server.port}' if hasattr(server, 'port') else '(raw socket)'
+            print(f'[+] {server.protocol} server started {port_str}')
+
+        print('\n[*] All servers running. Press Ctrl+C to stop.')
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print('\n[*] Shutting down all servers.')
+            sys.exit()
+
+    elif cli_parsed.sweep and cli_parsed.client is not None:
+        the_conductor.load_client_protocols(cli_parsed)
+        the_conductor.load_datatypes(cli_parsed)
+
+        protocols = list(the_conductor.client_protocols.values())
+        datatypes = list(the_conductor.datatypes.values())
+        results = []
+
+        for dtype in datatypes:
+            print(f'[*] Generating {dtype.description} data...')
+            try:
+                generated_data = dtype.generate_data()
+            except Exception as e:
+                for proto in protocols:
+                    results.append((proto.protocol, dtype.cli, False, f'Data generation failed: {e}'))
+                continue
+
+            for proto in protocols:
+                print(f'[*] Transmitting {dtype.cli} via {proto.protocol}...')
+                try:
+                    data = str.encode(generated_data) if proto.protocol in ('http', 'https') else generated_data
+                    proto.transmit(data)
+                    results.append((proto.protocol, dtype.cli, True, ''))
+                except SystemExit:
+                    results.append((proto.protocol, dtype.cli, False, 'sys.exit() called'))
+                except Exception as e:
+                    results.append((proto.protocol, dtype.cli, False, str(e)))
+
+        print('\n' + '=' * 60)
+        print('[*] Sweep complete.\n')
+        col1, col2 = 10, 12
+        print(f'{"Protocol":<{col1}} {"Datatype":<{col2}} {"Result"}')
+        print(f'{"-"*col1} {"-"*col2} {"-"*8}')
+        succeeded = 0
+        for proto_name, dtype_cli, success, err in sorted(results):
+            status = 'SUCCESS' if success else f'FAILED: {err}'
+            marker = '[+]' if success else '[-]'
+            print(f'{marker} {proto_name:<{col1}} {dtype_cli:<{col2}} {status}')
+            if success:
+                succeeded += 1
+        print(f'\n[*] {succeeded}/{len(results)} combos succeeded.')
+        sys.exit()
+
+    elif cli_parsed.server is not None:
         the_conductor.load_server_protocols(cli_parsed)
         the_conductor.load_actors(cli_parsed)
 
