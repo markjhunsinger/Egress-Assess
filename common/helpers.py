@@ -147,7 +147,6 @@ def received_file(filename):
 
 
 def title_screen():
-    os.system('clear')
     print("#" * 80)
     print("#" + " " * 32 + "Egress-Assess" + " " * 33 + "#")
     print("#" * 80 + "\n")
