@@ -32,10 +32,10 @@ class Client:
         resolver_object = dns.resolver.get_default_resolver()
         nameserver = resolver_object.nameservers[0]
 
-        while byte_reader < len(data_to_transmit) + self.length:
-            encoded_data = base64.b64encode(data_to_transmit[byte_reader:byte_reader + self.length]).decode('ascii').replace("=", ".---")
+        total_packets = -(-len(data_to_transmit) // self.length)  # ceiling division
 
-            total_packets = -(-len(data_to_transmit) // self.length)  # ceiling division
+        while byte_reader < len(data_to_transmit):
+            encoded_data = base64.b64encode(data_to_transmit[byte_reader:byte_reader + self.length]).decode('ascii').replace("=", ".---")
 
             sys.stdout.write(f'\r[*] Packet {packet_number}/{int(total_packets)}   ')
             sys.stdout.flush()
