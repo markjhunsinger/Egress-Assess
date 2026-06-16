@@ -31,14 +31,15 @@ class Client:
 
     def transmit(self, data_to_transmit):
 
-        # noinspection PyProtectedMember
-        ssl._create_default_https_context = ssl._create_unverified_context
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+
         if not self.file_transfer:
             url = 'https://' + self.remote_server + ':' + str(self.port) + '/post_data.php'
 
-            # Post the data to the web server at the specified URL
             try:
-                file = urllib.request.urlopen(url, data_to_transmit)
+                file = urllib.request.urlopen(url, data_to_transmit, context=ctx)
                 file.close()
                 print('[*] File sent')
             except urllib.error.URLError as e:
@@ -48,7 +49,7 @@ class Client:
 
             try:
                 data_to_transmit = bytes(self.file_transfer, encoding='utf-8') + b".:::-989-:::." + data_to_transmit
-                file = urllib.request.urlopen(url, data_to_transmit)
+                file = urllib.request.urlopen(url, data_to_transmit, context=ctx)
                 file.close()
                 print('[*] File sent')
             except urllib.error.URLError as e:

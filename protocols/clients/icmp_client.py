@@ -65,8 +65,7 @@ class Client:
             try:
                 send(IP(dst=final_destination) / ICMP() / encoded_data, verbose=False)
             except KeyboardInterrupt:
-                print('[*] Shutting down...')
-                sys.exit()
+                raise
 
             # Increment counters
             byte_reader += self.length

@@ -47,7 +47,7 @@ class Client:
 
         if not self.file_transfer:
             # Create the message
-            msg = MIMEText('This is the data to exfil:\n\n' + data_to_transmit)
+            msg = MIMEText('This is the data to exfil:\n\n' + data_to_transmit, 'plain', 'utf-8')
             msg['To'] = email.utils.formataddr(('Server', 'server@egress-assess.com'))
             msg['From'] = email.utils.formataddr(('Tester', 'tester@egress-assess.com'))
             msg['Subject'] = 'Egress-Assess Exfil Data'

