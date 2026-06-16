@@ -135,7 +135,7 @@ The following protocols verify that data arrived on the server intact (detects D
 | FTP | Client checks remote file size after upload |
 | SFTP | Client checks remote file size after upload |
 | SMTP | Server returns SHA256 in 250 response; client compares |
-| SMB | Exit code verification only |
+| SMB | Client checks remote file size after upload |
 | DNS / dns_resolved / ICMP | No verification (fire-and-forget) |
 
 ---
