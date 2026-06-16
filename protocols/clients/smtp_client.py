@@ -7,6 +7,7 @@ http://pymotw.com/2/smtpd/
 
 import hashlib
 import smtplib
+import email.policy
 import email.utils
 from email import encoders
 from email.mime.base import MIMEBase
@@ -64,11 +65,10 @@ class Client:
             part.add_header('Content-Disposition', 'attachment; filename=' + self.file_transfer)
             msg.attach(part)
 
-        msg_bytes = msg.as_bytes()
-        # Normalize to \r\n to match what smtplib sends on the wire and
-        # what aiosmtpd stores in envelope.content (server normalizes back to \n)
-        wire_bytes = msg_bytes.replace(b'\r\n', b'\n').replace(b'\n', b'\r\n')
-        local_hash = hashlib.sha256(wire_bytes.replace(b'\r\n', b'\n')).hexdigest()
+        # email.policy.SMTP enforces RFC 5321 line length limits (998 chars max)
+        # and normalizes to \r\n — same bytes aiosmtpd stores in envelope.content
+        msg_bytes = msg.as_bytes(policy=email.policy.SMTP)
+        local_hash = hashlib.sha256(msg_bytes.replace(b'\r\n', b'\n')).hexdigest()
 
         server = smtplib.SMTP(self.remote_server, self.port)
         try:
