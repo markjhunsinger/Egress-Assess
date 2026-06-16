@@ -63,7 +63,7 @@ class Client:
             part.add_header('Content-Disposition', 'attachment; filename=' + self.file_transfer)
             msg.attach(part)
 
-        server = smtplib.SMTP.connect(self.remote_server, host=self.remote_server, port=self.port)
+        server = smtplib.SMTP(self.remote_server, self.port)
         try:
             server.sendmail('tester@egress-assess.com', ['server@egress-assess.com'], msg.as_string())
         finally:

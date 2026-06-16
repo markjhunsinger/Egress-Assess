@@ -42,8 +42,9 @@ class Client:
             sftp_file_name = helpers.writeout_text_data(data_to_transmit)
             full_path = helpers.ea_path() + '/' + sftp_file_name
 
-            transport = paramiko.Transport(self.remote_system, self.port)
-            transport.connect(username=self.username, password=self.password)
+            transport = paramiko.Transport((self.remote_system, self.port))
+            transport.connect()
+            transport.auth_password(self.username, self.password)
             sftp = paramiko.SFTPClient.from_transport(transport)
             sftp.put(full_path, '/' + sftp_file_name)
 
@@ -53,9 +54,10 @@ class Client:
 
             os.remove(sftp_file_name)
         else:
-            transport = paramiko.Transport(self.remote_system, self.port)
-            transport.connect(username=self.username, password=self.password)
-            sftp = transport.open_sftp_client().from_transport(transport)
+            transport = paramiko.Transport((self.remote_system, self.port))
+            transport.connect()
+            transport.auth_password(self.username, self.password)
+            sftp = paramiko.SFTPClient.from_transport(transport)
             if '/' in self.file_transfer:
                 sftp.put(self.file_transfer, '/' + self.file_transfer.split('/')[-1])
             else:
