@@ -4,6 +4,7 @@ This is the web client code
 
 """
 
+import hashlib
 import ssl
 import sys
 import urllib.request
@@ -39,8 +40,12 @@ class Client:
             url = 'https://' + self.remote_server + ':' + str(self.port) + '/post_data.php'
 
             try:
-                file = urllib.request.urlopen(url, data_to_transmit, context=ctx)
-                file.close()
+                resp = urllib.request.urlopen(url, data_to_transmit, context=ctx)
+                server_hash = resp.read().decode().strip()
+                resp.close()
+                local_hash = hashlib.sha256(data_to_transmit).hexdigest()
+                if server_hash and server_hash != local_hash:
+                    raise RuntimeError('Integrity check failed: data was modified in transit (DLP/proxy?)')
                 print('[*] File sent')
             except urllib.error.URLError as e:
                 raise RuntimeError(f'Web server unreachable on {self.remote_server}:{self.port} - {e}')

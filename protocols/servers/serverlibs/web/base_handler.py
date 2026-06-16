@@ -1,3 +1,4 @@
+import hashlib
 import os
 import random
 import time
@@ -9,11 +10,10 @@ from protocols.servers.serverlibs.web import malware_callbacks
 
 
 class GetHandler(BaseHTTPRequestHandler):
-    # Some http server code came from Dave Kennedy's AES shell
-    # over http - the server specific code
 
-    # should be performing GET requests Help from
-    # http://pymotw.com/2/BaseHTTPServer/
+    def log_message(self, format, *args):
+        pass  # suppress per-request stdout noise
+
     def do_GET(self):
         if self.path in malware_callbacks.malware_uris:
             self.send_response(200)
@@ -90,27 +90,24 @@ class GetHandler(BaseHTTPRequestHandler):
         # python-webserver-to-save-file
         if self.path == "/post_data.php":
 
-            self.send_response(200)
-            self.end_headers()
-
-            # Check to make sure the agent directory exists, and a loot
-            # directory for the agent.  If not, make them
             if not os.path.isdir(loot_path):
                 os.makedirs(loot_path)
 
-            # Get the date info
+            screen_length = self.headers['content-length']
+            screen_data = self.rfile.read(int(screen_length))
+            data_hash = hashlib.sha256(screen_data).hexdigest()
+
             current_date = time.strftime("%m/%d/%Y")
             current_time = time.strftime("%H:%M:%S")
             screenshot_name = current_date.replace("/", "") + "_" + current_time.replace(":", "") + "web_data.txt"
 
-            # Read the length of the file being uploaded
-            screen_length = self.headers['content-length']
-            screen_data = self.rfile.read(int(screen_length))
-
-            # Write out the file
             with open(loot_path + screenshot_name, 'a') as cc_data_file:
                 cc_data_file.write('METADATA: From: ' + str(self.client_address) + ' ' + str(self.address_string) + '\n\n')
                 cc_data_file.write(str(screen_data))
+
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(data_hash.encode())
 
         elif self.path == "/post_file.php":
             self.send_response(200)

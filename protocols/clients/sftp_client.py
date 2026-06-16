@@ -38,33 +38,30 @@ class Client:
 
         print('[*] Transmitting data...')
 
+        transport = paramiko.Transport((self.remote_system, self.port))
+        transport.connect()
+        transport.auth_password(self.username, self.password)
+        sftp = paramiko.SFTPClient.from_transport(transport)
+
         if not self.file_transfer:
             sftp_file_name = helpers.writeout_text_data(data_to_transmit)
             full_path = helpers.ea_path() + '/' + sftp_file_name
-
-            transport = paramiko.Transport((self.remote_system, self.port))
-            transport.connect()
-            transport.auth_password(self.username, self.password)
-            sftp = paramiko.SFTPClient.from_transport(transport)
+            local_size = os.path.getsize(full_path)
             sftp.put(full_path, '/' + sftp_file_name)
-
-            # close sftp connection
+            remote_size = sftp.stat('/' + sftp_file_name).st_size
             sftp.close()
             transport.close()
-
-            os.remove(sftp_file_name)
+            os.remove(full_path)
+            if remote_size != local_size:
+                raise RuntimeError(f'Integrity check failed: sent {local_size}B, server has {remote_size}B')
         else:
-            transport = paramiko.Transport((self.remote_system, self.port))
-            transport.connect()
-            transport.auth_password(self.username, self.password)
-            sftp = paramiko.SFTPClient.from_transport(transport)
-            if '/' in self.file_transfer:
-                sftp.put(self.file_transfer, '/' + self.file_transfer.split('/')[-1])
-            else:
-                sftp.put(self.file_transfer, '/' + self.file_transfer)
-
-            # close sftp connection
+            remote_name = self.file_transfer.split('/')[-1] if '/' in self.file_transfer else self.file_transfer
+            local_size = os.path.getsize(self.file_transfer)
+            sftp.put(self.file_transfer, '/' + remote_name)
+            remote_size = sftp.stat('/' + remote_name).st_size
             sftp.close()
             transport.close()
+            if remote_size != local_size:
+                raise RuntimeError(f'Integrity check failed: sent {local_size}B, server has {remote_size}B')
 
         print('[*] Data sent')
