@@ -53,6 +53,8 @@ def cli_parser():
     sweep_options = parser.add_argument_group('Sweep Mode')
     sweep_options.add_argument('--sweep', default=False, action='store_true',
                                help='Run in sweep mode: all protocols and datatypes.')
+    sweep_options.add_argument('--json-out', default=None, metavar='results.json',
+                               help='Write sweep results to a JSON file.')
     sweep_options.add_argument('--sftp-port', default=None, metavar='2222', type=int,
                                help='Override SFTP port in sweep mode (default 22, often conflicts with SSH).')
     sweep_options.add_argument('--smb-port', default=None, metavar='8445', type=int,

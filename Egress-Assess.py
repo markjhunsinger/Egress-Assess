@@ -6,6 +6,7 @@
 # capabilities.
 
 
+import json
 import logging
 import os
 import sys
@@ -259,6 +260,21 @@ if __name__ == "__main__":
         total = len(results)
         pct = int(succeeded / total * 100) if total else 0
         print(f'\n{B}{succeeded}/{total}{X} combinations allowed {DIM}({pct}%){X}\n')
+
+        if cli_parsed.json_out:
+            import datetime
+            payload = {
+                'timestamp': datetime.datetime.utcnow().isoformat() + 'Z',
+                'summary': {'allowed': succeeded, 'total': total, 'pct': pct},
+                'results': [
+                    {'protocol': p, 'datatype': d, 'status': s, 'error': e}
+                    for p, d, s, e in results
+                ],
+            }
+            with open(cli_parsed.json_out, 'w') as jf:
+                json.dump(payload, jf, indent=2)
+            print(f'[*] Results written to {cli_parsed.json_out}')
+
         sys.exit()
 
     elif cli_parsed.server is not None:
