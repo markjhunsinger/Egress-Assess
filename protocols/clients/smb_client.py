@@ -45,7 +45,7 @@ class Client:
         local_size = os.path.getsize(local_path)
 
         try:
-            conn = SMBConnection(self.remote_server, self.remote_server, sess_port=self.port)
+            conn = SMBConnection(self.remote_server, self.remote_server, sess_port=self.port, timeout=10)
             conn.login('', '')
 
             with open(local_path, 'rb') as fh:

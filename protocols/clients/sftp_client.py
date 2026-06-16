@@ -10,6 +10,7 @@ Finally, be sure to rename your client module to a .py file
 """
 
 import paramiko
+import socket
 import os
 from common import helpers
 
@@ -38,7 +39,8 @@ class Client:
 
         print('[*] Transmitting data...')
 
-        transport = paramiko.Transport((self.remote_system, self.port))
+        sock = socket.create_connection((self.remote_system, self.port), timeout=10)
+        transport = paramiko.Transport(sock)
         transport.connect()
         transport.auth_password(self.username, self.password)
         sftp = paramiko.SFTPClient.from_transport(transport)

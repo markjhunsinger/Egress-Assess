@@ -40,7 +40,7 @@ class Client:
             url = 'https://' + self.remote_server + ':' + str(self.port) + '/post_data.php'
 
             try:
-                resp = urllib.request.urlopen(url, data_to_transmit, context=ctx)
+                resp = urllib.request.urlopen(url, data_to_transmit, context=ctx, timeout=10)
                 server_hash = resp.read().decode().strip()
                 resp.close()
                 local_hash = hashlib.sha256(data_to_transmit).hexdigest()
@@ -54,7 +54,7 @@ class Client:
 
             try:
                 data_to_transmit = bytes(self.file_transfer, encoding='utf-8') + b".:::-989-:::." + data_to_transmit
-                file = urllib.request.urlopen(url, data_to_transmit, context=ctx)
+                file = urllib.request.urlopen(url, data_to_transmit, context=ctx, timeout=10)
                 file.close()
                 print('[*] File sent')
             except urllib.error.URLError as e:

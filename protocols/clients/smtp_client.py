@@ -70,7 +70,7 @@ class Client:
         msg_bytes = msg.as_bytes(policy=email.policy.SMTP)
         local_hash = hashlib.sha256(msg_bytes.replace(b'\r\n', b'\n')).hexdigest()
 
-        server = smtplib.SMTP(self.remote_server, self.port)
+        server = smtplib.SMTP(self.remote_server, self.port, timeout=10)
         try:
             server.ehlo()
             server.mail('tester@egress-assess.com')
