@@ -30,6 +30,12 @@ def _detect_public_ip():
         return urllib.request.urlopen(ip_req, timeout=2).read().decode().strip()
     except Exception:
         pass
+    # Generic fallback — requires DNS on non-EC2 hosts
+    for url in ('https://checkip.amazonaws.com', 'https://api.ipify.org'):
+        try:
+            return urllib.request.urlopen(url, timeout=3).read().decode().strip()
+        except Exception:
+            pass
     return None
 
 
