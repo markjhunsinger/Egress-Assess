@@ -55,6 +55,8 @@ def cli_parser():
                                help='Run in sweep mode: all protocols and datatypes.')
     sweep_options.add_argument('--sftp-port', default=None, metavar='2222', type=int,
                                help='Override SFTP port in sweep mode (default 22, often conflicts with SSH).')
+    sweep_options.add_argument('--smb-port', default=None, metavar='8445', type=int,
+                               help='Override SMB port in sweep mode (default 445, blocked by AWS).')
 
     args = parser.parse_args()
 

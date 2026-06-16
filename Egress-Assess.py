@@ -72,6 +72,11 @@ if __name__ == "__main__":
                 if s.protocol == 'sftp':
                     s.port = cli_parsed.sftp_port
 
+        if cli_parsed.smb_port:
+            for s in servers:
+                if s.protocol == 'smb':
+                    s.port = cli_parsed.smb_port
+
         errors = helpers.preflight_server_sweep(servers)
         if errors:
             print('[!] Pre-flight checks failed:')
@@ -104,6 +109,12 @@ if __name__ == "__main__":
             for p in protocols:
                 if p.protocol == 'sftp':
                     p.port = cli_parsed.sftp_port
+
+        if cli_parsed.smb_port:
+            for p in protocols:
+                if p.protocol == 'smb':
+                    p.port = cli_parsed.smb_port
+
         datatypes = list(the_conductor.datatypes.values())
         results = []
 
