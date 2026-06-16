@@ -55,7 +55,7 @@ class Client:
             os.makedirs(mount_path)
 
         # Base command to copy file over smb
-        smb_command = f"smbclient \\\\\\\\{self.remote_server}" + f"\\\\TRANSFER -N -p {self.port} -c \"put "
+        smb_command = f"smbclient -s /dev/null \\\\\\\\{self.remote_server}" + f"\\\\TRANSFER -N -p {self.port} -c \"put "
 
         # If using a file, copy it, else write to disk and then copy
         if not self.file_transfer:
@@ -69,9 +69,12 @@ class Client:
             smb_file_name = self.file_transfer
 
         print(smb_command)
-        os.system(smb_command)
+        result = os.system(smb_command)
 
         if not self.file_transfer:
             os.remove(smb_full_path)
+
+        if result != 0:
+            raise RuntimeError(f'smbclient exited with code {result}')
 
         print('[*] File Transmitted!')
