@@ -1,43 +1,46 @@
-# Code from http://pymotw.com/2/smtpd/
-# Code from https://github.com/trentrichardson/Python-Email-Dissector/blob/master/EDHelpers/EDServer.py
-
 import base64
-from email.parser import Parser
-import smtpd
+from email.parser import BytesParser
 import time
 from common import helpers
 
 
-class CustomSMTPServer(smtpd.SMTPServer):
+class CustomSMTPHandler:
 
-    def process_message(self, peer, mailfrom, rcpttos, data):
+    def __init__(self, loot_directory):
+        self.loot_directory = loot_directory
+
+    async def handle_DATA(self, server, session, envelope):
+        peer = session.peer
+        mailfrom = envelope.mail_from
+        rcpttos = envelope.rcpt_tos
+        data = envelope.content  # bytes
 
         print('Receiving message from:', peer)
         print('Message addressed from:', mailfrom)
         print('Message addressed to  :', rcpttos)
         print('Message length        :', len(data))
 
-        loot_directory = helpers.ea_path() + '/transfer'
-
-        p = Parser()
-        msgobj = p.parsestr(data)
+        p = BytesParser()
+        msgobj = p.parsebytes(data)
         for part in msgobj.walk():
             attachment = self.email_parse_attachment(part)
             if type(attachment) is dict and 'filedata' in attachment:
                 decoded_file_data = base64.b64decode(attachment['filedata'])
                 attach_file_name = attachment['filename']
-                with open(loot_directory + "/" + attach_file_name, 'wb') as attached_file:
+                with open(self.loot_directory + "/" + attach_file_name, 'wb') as attached_file:
                     helpers.received_file(attach_file_name)
                     attached_file.write(decoded_file_data)
             else:
                 current_date = time.strftime("%m/%d/%Y")
                 current_time = time.strftime("%H:%M:%S")
-                file_name = current_date.replace("/", "") +\
+                file_name = current_date.replace("/", "") + \
                     "_" + current_time.replace(":", "") + "email_data.txt"
 
-                with open(loot_directory + "/" + file_name, 'a') as email_file:
-                    email_file.write('METADATA: File from - ' + str(peer) + '\n\n')
+                with open(self.loot_directory + "/" + file_name, 'ab') as email_file:
+                    email_file.write(b'METADATA: File from - ' + str(peer).encode() + b'\n\n')
                     email_file.write(data)
+
+        return '250 Message accepted for delivery'
 
     @staticmethod
     def email_parse_attachment(message_part):

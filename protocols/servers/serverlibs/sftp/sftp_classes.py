@@ -14,9 +14,9 @@ class User(object):
         self.password = password
         self.chroot = chroot
         self.public_key = public_key
-        if type(self.public_key) in (str, str):
-            bits = base64.decodebytes(self.public_key.key(' ')[1])
-            msg = paramiko.Message(str(bits))
+        if isinstance(self.public_key, str):
+            bits = base64.decodebytes(self.public_key.split(' ')[1].encode())
+            msg = paramiko.Message(bits)
             key = paramiko.RSAKey(msg)
             self.public_key = key
 
@@ -30,9 +30,9 @@ class SFTPHandle(paramiko.SFTPHandle):
         paramiko.SFTPHandle.__init__(self, flags)
         self.path = path
         if flags == 0:
-            self.readfile = open(path, "r")
+            self.readfile = open(path, "rb")
         else:
-            self.writefile = open(path, "w")
+            self.writefile = open(path, "wb")
 
 
 class SvnSFTPHandle(SFTPHandle):
@@ -40,9 +40,9 @@ class SvnSFTPHandle(SFTPHandle):
         paramiko.SFTPHandle.__init__(self, flags)
         self.path = path
         if flags == 0:
-            self.readfile = open(path, "r")
+            self.readfile = open(path, "rb")
         else:
-            self.writefile = open(path, "w")
+            self.writefile = open(path, "wb")
 
     def close(self):
         paramiko.SFTPHandle.close(self)
@@ -197,9 +197,8 @@ def accept_client(client, addr, root_dir, users, host_rsa_key, conf={}):
         usermap[u.username] = u
 
     host_key_file = StringIO(host_rsa_key)
-    host_key = paramiko.RSAKey(file_obj=host_key_file)
+    host_key = paramiko.RSAKey.from_private_key(host_key_file)
     transport = paramiko.Transport(client)
-    transport.load_server_moduli()
     transport.add_server_key(host_key)
 
     if "sftp_implementation" in conf:

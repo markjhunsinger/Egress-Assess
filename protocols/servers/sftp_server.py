@@ -63,9 +63,8 @@ Myw1d5t46XP97y6Szrhcsrt15pmSKD+zLYXD26qoxKJOP9a6+A==
             usermap[user.username] = user
 
         host_key_file = StringIO(host_rsa_key)
-        host_key = paramiko.RSAKey(file_obj=host_key_file)
+        host_key = paramiko.RSAKey.from_private_key(host_key_file)
         transport = paramiko.Transport(client)
-        transport.load_server_moduli()
         transport.add_server_key(host_key)
 
         impl = sftp_classes.SimpleSftpServer

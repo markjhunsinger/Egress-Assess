@@ -1,13 +1,8 @@
-"""
-
-This was based on code made available at http://pymotw.com/2/smtpd/
-
-"""
-
-import asyncore
 import os
 import socket
 import sys
+import time
+from aiosmtpd.controller import Controller
 from common import helpers
 from protocols.servers.serverlibs.smtp import smtp_class
 
@@ -29,16 +24,22 @@ class Server:
         if not os.path.isdir(exfil_directory):
             os.makedirs(exfil_directory)
 
-        print(f'[*] Started an SMTP server on port {self.port}.')
+        handler = smtp_class.CustomSMTPHandler(exfil_directory.rstrip('/'))
+        controller = Controller(handler, hostname='0.0.0.0', port=self.port)
+
         try:
-            smtp_class.CustomSMTPServer(('0.0.0.0', self.port), None)
+            controller.start()
         except socket.error:
             print(f'[*] Error: Port {self.port} is currently in use.')
             print('[*] Error: Please re-start when not in use.')
             sys.exit()
 
+        print(f'[*] Started an SMTP server on port {self.port}.')
+
         try:
-            asyncore.loop()
+            while True:
+                time.sleep(1)
         except KeyboardInterrupt:
             print('[*] Shutting down the SMTP server.')
+            controller.stop()
             sys.exit()
