@@ -40,29 +40,34 @@ class Client:
             ftp.connect(self.remote_server, self.port)
         except socket.gaierror as e:
             raise RuntimeError(f'Cannot connect to FTP server {self.remote_server}:{self.port} - {e}')
+        except (socket.timeout, TimeoutError):
+            raise RuntimeError('timed out')
 
         try:
             ftp.login(self.username, self.password)
         except error_perm as e:
             raise RuntimeError(f'FTP login failed - {e}')
 
-        if not self.file_transfer:
-            ftp_file_name = helpers.writeout_text_data(data_to_transmit)
-            local_path = helpers.ea_path() + "/" + ftp_file_name
-            local_size = os.path.getsize(local_path)
-            ftp.storbinary(f"STOR {ftp_file_name}", open(local_path, 'rb'))
-            remote_size = ftp.size(ftp_file_name)
-            os.remove(local_path)
-            if remote_size != local_size:
-                ftp.quit()
-                raise RuntimeError(f'Integrity check failed: sent {local_size}B, server has {remote_size}B')
-        else:
-            local_size = os.path.getsize(self.file_transfer)
-            ftp.storbinary("STOR " + self.file_transfer, open(self.file_transfer, 'rb'))
-            remote_size = ftp.size(os.path.basename(self.file_transfer))
-            if remote_size != local_size:
-                ftp.quit()
-                raise RuntimeError(f'Integrity check failed: sent {local_size}B, server has {remote_size}B')
+        try:
+            if not self.file_transfer:
+                ftp_file_name = helpers.writeout_text_data(data_to_transmit)
+                local_path = helpers.ea_path() + "/" + ftp_file_name
+                local_size = os.path.getsize(local_path)
+                ftp.storbinary(f"STOR {ftp_file_name}", open(local_path, 'rb'))
+                remote_size = ftp.size(ftp_file_name)
+                os.remove(local_path)
+                if remote_size != local_size:
+                    ftp.quit()
+                    raise RuntimeError(f'Integrity check failed: sent {local_size}B, server has {remote_size}B')
+            else:
+                local_size = os.path.getsize(self.file_transfer)
+                ftp.storbinary("STOR " + self.file_transfer, open(self.file_transfer, 'rb'))
+                remote_size = ftp.size(os.path.basename(self.file_transfer))
+                if remote_size != local_size:
+                    ftp.quit()
+                    raise RuntimeError(f'Integrity check failed: sent {local_size}B, server has {remote_size}B')
+        except (socket.timeout, TimeoutError):
+            raise RuntimeError('timed out (data channel blocked)')
 
         ftp.quit()
         print('[*] File sent')
