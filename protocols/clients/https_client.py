@@ -41,10 +41,8 @@ class Client:
                 file = urllib.request.urlopen(url, data_to_transmit)
                 file.close()
                 print('[*] File sent')
-            except urllib.error.URLError:
-                print(f'[*] Error: Web server may not be active on {self.remote_server}')
-                print('[*] Error: Please check server to make sure it is active!')
-                sys.exit()
+            except urllib.error.URLError as e:
+                raise RuntimeError(f'Web server unreachable on {self.remote_server}:{self.port} - {e}')
         else:
             url = 'https://' + self.remote_server + ':' + str(self.port) + '/post_file.php'
 
@@ -53,8 +51,5 @@ class Client:
                 file = urllib.request.urlopen(url, data_to_transmit)
                 file.close()
                 print('[*] File sent')
-            except urllib.error.URLError:
-                print(f'[*] Error: Web server may not be active on {self.remote_server}')
-                print('[*] Error: Please check server to make sure it is active!')
-                print(f'[*] Error: Please add --client-port port if the server is not on 443')
-                sys.exit()
+            except urllib.error.URLError as e:
+                raise RuntimeError(f'Web server unreachable on {self.remote_server}:{self.port} - {e}')

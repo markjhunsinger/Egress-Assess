@@ -38,15 +38,13 @@ class Client:
         try:
             ftp = FTP()
             ftp.connect(self.remote_server, self.port)
-        except socket.gaierror:
-            print('[*] Error: Cannot connect to FTP server.  Check provided IP.')
-            sys.exit()
+        except socket.gaierror as e:
+            raise RuntimeError(f'Cannot connect to FTP server {self.remote_server}:{self.port} - {e}')
 
         try:
             ftp.login(self.username, self.password)
-        except error_perm:
-            print('[*] Error: Username or password is incorrect.  Please re-run.')
-            sys.exit()
+        except error_perm as e:
+            raise RuntimeError(f'FTP login failed - {e}')
 
         if not self.file_transfer:
             ftp_file_name = helpers.writeout_text_data(data_to_transmit)
