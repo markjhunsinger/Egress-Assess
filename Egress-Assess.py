@@ -132,7 +132,12 @@ if __name__ == "__main__":
                 for proto in protocols:
                     print(f'[*] Transmitting {dtype.cli} via {proto.protocol}...')
                     try:
-                        data = str.encode(generated_data) if proto.protocol in ('http', 'https', 'dns', 'dns_resolved') else generated_data
+                        if proto.protocol in ('dns', 'dns_resolved'):
+                            data = str.encode(generated_data[:5000])
+                        elif proto.protocol in ('http', 'https'):
+                            data = str.encode(generated_data)
+                        else:
+                            data = generated_data
                         proto.transmit(data)
                         results.append((proto.protocol, dtype.cli, True, ''))
                     except SystemExit:
