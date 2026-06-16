@@ -107,7 +107,7 @@ class Server:
 class BaseRequestHandler(socketserver.BaseRequestHandler):
 
     def __init__(self, *kargs):
-        self.preamble = ".:|:."
+        self.preamble = b".:|:."
         self.ENDFILESTRING = "ENDTHISFILETRANSMISSIONEGRESSASSESS"
 
         socketserver.BaseRequestHandler.__init__(self, *kargs)
@@ -186,12 +186,12 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
             decoded = base64.b64decode(encoded_qname)
 
             if self.preamble not in decoded:
-                self.write_file(FILE_NAME, 'a', data=decoded)
+                self.write_file(FILE_NAME, 'a', data=decoded.decode('latin-1'))
                 return
 
             parts = decoded.split(self.preamble)
             FILE_STATUS = self.decode_file_status(parts[0])
-            file_data = parts[1]
+            file_data = parts[1].decode('latin-1')
 
             if FILE_STATUS not in FILE_DICT:
                 FILE_DICT[FILE_STATUS] = file_data
@@ -224,16 +224,14 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
                     data_parts = data.split(self.preamble)
 
                     FILE_STATUS = self.decode_file_status(data_parts[0])
-                    file_data = data_parts[1]
+                    file_data = data_parts[1].decode('latin-1')
 
                     FILE_DICT[FILE_STATUS] = file_data
                     self.upload_feedback()
                 except Exception as e:
                     print(f'[-] Error handle_dns_resolved: {e} {data}')
             else:
-                # The request is not a file upload, write directly to the file in append mode
-
-                self.write_file(FILE_NAME, 'a', data=data)
+                self.write_file(FILE_NAME, 'a', data=data.decode('latin-1'))
                 return
         except Exception as e:
             print(f'[-] handle_dns_resolved Error: {e} {encoded_qname}')
