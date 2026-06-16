@@ -1,68 +1,161 @@
-Egress-Assess
-=============
+# Egress-Assess
 
-Egress-Assess is a tool used to test egress data detection capabilities.
+A tool for testing egress data detection capabilities. Run a server on one host and a client on another to verify which protocols and data types can exfiltrate data through your network controls.
 
-Setup
-=====
+## Requirements
 
-To set up, run the included setup script, or perform the following:
+- Python 3.12+
+- Root / Administrator privileges (required for ICMP and DNS raw socket clients)
 
-1.  Install pyftpdlib
-2.  Generate a server certificate and store it as "server.pem" on the same level as Egress-Assess.  This can be done with the following command:
+## Setup
 
-`openssl req -new -x509 -keyout server.pem -out server.pem -days 365 -nodes`
+### 1. Create a virtual environment
 
-Usage
-=====
+```bash
+python3 -m venv egress-venv
+source egress-venv/bin/activate   # Windows: egress-venv\Scripts\activate
+pip install -r requirements.txt
+```
 
-Blog posts are available here: 
+### 2. Generate an SSL certificate (required for HTTPS)
 
-* https://www.christophertruncer.com/egress-assess-testing-egress-data-detection-capabilities/
-* https://www.christophertruncer.com/egress-assess-action-via-powershell/
+```bash
+openssl req -new -x509 -keyout server.pem -out server.pem -days 365 -nodes
+```
 
-Typical use case for Egress-Assess is to copy this tool in two locations.  One location will act as the server, the other will act as the client.  Egress-Assess can send data over FTP, HTTP, and HTTPS.
+Place `server.pem` in the same directory as `Egress-Assess.py`.
 
-To extract data over FTP, you would first start Egress-Assess’s FTP server by selecting “--server ftp” and providing a username and password to use:
+---
 
-`./Egress-Assess.py --server ftp --username testuser --password pass123`
+## Usage
 
-Now, to have the client connect and send data to the FTP server, you could run...
+### Sweep Mode (recommended)
 
-`./Egress-Assess.py --client ftp --username testuser --password pass123 --ip 192.168.63.149 --datatype ssn`
+Sweep mode tests all protocols and data types automatically and produces a summary report.
 
-Also, you can set up Egress-Assess to act as a web server by running....
+**Server** — start all servers at once:
 
-`./Egress-Assess.py --server https`
+```bash
+sudo python3 Egress-Assess.py --server --sweep --username testuser --password pass123 \
+    --sftp-port 2222 --smb-port 8445
+```
 
-Then, to send data to the FTP server, and to specifically send 15 megs of credit card data, run the following command...
+**Client** — transmit all data types over all protocols:
 
-`./Egress-Assess.py --client https --data-size 15 --ip 192.168.63.149 --datatype cc`
+```bash
+sudo python3 Egress-Assess.py --client --sweep --ip <server-ip> \
+    --username testuser --password pass123 \
+    --sftp-port 2222 --smb-port 8445
+```
 
-Other things of note:
-- dns_complete is an improved version of the DNS Server module. Using DNSLib, this module can listen and respond to requests from both TXT and A records, decode the requests utilizing the correct format, and write the output to a file.
-- SMB has an option for SMB2 support or not. Newer Windows10 systems typically have SMBv1 disabled. For this reason SMBv2 is the default, you can use the switch to disable SMBv2.
+The client prints a colour-coded matrix showing **Allowed** / **Blocked** per protocol × data type, with a failures section listing error details.
 
+#### Sweep flags
 
-How the Protocols Attempt Exfil
------
-- SMTP - The client creates a mail message placing the data in the body of the message or if a file, as an attachment. The client then attempts to make an SMTP connection to the EgressAssess Server over port 25 (or an alternate port provided). The SMTP server does not require authentication and accepts the incoming connection and processes the email. The processing of the mail message takes the data from the body of the email or from the attached file in the mail message. This test does not attempt to send the email through the organizations email server.
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--sftp-port` | 22 | Override SFTP port (port 22 conflicts with SSH) |
+| `--smb-port` | 445 | Override SMB port (port 445 is blocked by AWS and some ISPs) |
 
-- SMTP_Outlook – (This module is only available in the PowerShell client). If an Outlook client has been previously configured, the PowerShell client creates a COM Object to Outlook (This may require a user to provide authentication depending on the configuration). The PowerShell client then will create a mail message with the data in the body of the email or if a file, as an attachment. Emails are sent from Outlook as the previously configured user. (Some security settings may notify the user that a program is trying to send emails in the background and needs to select allow). For this module to work an MX record needs to be created for the EgressAssess Server. The EgressAssess SMTP server accepts all email messages sent to the domain of the MX record and receives the email with the file attachments or the data as test in out the body of the email. 
-`Invoke-EssessAgress -Client SMTPOutlook -IP <domain of SMTP Sever> -NoPing -DataType "ssn"`
+---
 
-- ICMP - The data is broken up into bytes and base64 encoded and sent over the wire in an ICMP Type 8 ECHO request. the data is placed inside the data field of the packet. The ECHO requests are continuously made to the EgressAsess Server which receives the ICMP request and gathers the data and decodes it. 
+### Single Protocol Mode
 
-- FTP - Data and files are upload to the EgressAssess FTP server following typical protocol usage. A username and password are used to access the server. See examples above.
+**Server:**
 
-- SFTP - Data and files are uploaded following the SFTP protocol. A username and password are used to access the server.
+```bash
+sudo python3 Egress-Assess.py --server <protocol> --username testuser --password pass123
+```
 
-- HTTP(S) - Data and files are sent via a POST web request to the EgressAssess web server. For the Python client, the data is posted to http(s)://<IP or FQDN>/post_data.php and for the PowerShell Client the data is posted to http(s)://<IP or FQDN>/posh_file.php.
+**Client:**
 
-- SMB - The EgressAssess Server (using Impacket's SimpleSMBserver) creates a /TRANSFER SMB Share. The client system connects to the share with no authentication and transfers the file. Just like connecting to a network share and copying a file over. There is the option to add a username and password for authentication as well if desired. As noted above, determine which system you are egressing from and their security policies to see if you can use the old vulnerable SMBv1 or need to enable SMBv2
+```bash
+sudo python3 Egress-Assess.py --client <protocol> --ip <server-ip> \
+    --username testuser --password pass123 --datatype <datatype>
+```
 
-- DNS_TXT - Data and files are broken up into bytes and then converted to base64 and chunked into separate DNS TXT queries that are made at an IP address or Domain Name. The client attempts to connect directly to the EgressAssess Server and makes the DNS TXT query. The Server then filters the data out of the packets and decodes the data. In the PowerShell Client there is an option for Stacked queries. This will make up to 7 TXT queries in each DNS request at the server which increases the speed at which the data is exfilled.
+**Examples:**
 
-- DNS_Resolved - Data and files are broken up into bytes and then converted to base64. The data is then chunked up and used as a part of a DNS request to resolve a subdomain. <encoded_data>.domain.com. For this to work an NS record for the domain needs to be setup for the EgressAssess server. All the DNS requests are made to the systems set nameserver and ultimately reach the EgressAssess server that was previously setup. The EgressAssess server takes the data section from each request and puts the file back together.
+```bash
+# FTP
+sudo python3 Egress-Assess.py --server ftp --username testuser --password pass123
+sudo python3 Egress-Assess.py --client ftp --ip 10.0.0.1 --username testuser --password pass123 --datatype creditcard
 
+# HTTPS
+sudo python3 Egress-Assess.py --server https
+sudo python3 Egress-Assess.py --client https --ip 10.0.0.1 --datatype ssn
 
+# DNS (requires root)
+sudo python3 Egress-Assess.py --server dns
+sudo python3 Egress-Assess.py --client dns --ip 10.0.0.1 --datatype creditcard
+
+# SFTP on alternate port
+sudo python3 Egress-Assess.py --server sftp --username testuser --password pass123 --server-port 2222
+sudo python3 Egress-Assess.py --client sftp --ip 10.0.0.1 --username testuser --password pass123 --client-port 2222 --datatype creditcard
+```
+
+---
+
+## Supported Protocols
+
+| Protocol | Default Port | Notes |
+|----------|-------------|-------|
+| ftp | 21 | Username/password required |
+| http | 80 | |
+| https | 443 | Requires `server.pem` on server |
+| smtp | 25 | |
+| sftp | 22 | Username/password required; use `--sftp-port 2222` to avoid SSH conflict |
+| smb | 445 | Use `--smb-port 8445` on AWS (port 445 blocked at hypervisor) |
+| dns | 53 | Requires root; data sent in DNS TXT queries |
+| dns_resolved | 53 | Requires root; data sent as DNS A record subdomains |
+| icmp | — | Requires root; raw socket |
+
+List all: `python3 Egress-Assess.py --list-clients` / `--list-servers`
+
+## Supported Data Types
+
+| Type | Description |
+|------|-------------|
+| `creditcard` | Credit card numbers |
+| `ssn` | US Social Security Numbers |
+| `ni` | UK National Insurance Numbers |
+| `identity` | Combination identity data |
+
+List all: `python3 Egress-Assess.py --list-datatypes`
+
+---
+
+## Integrity Verification
+
+The following protocols verify that data arrived on the server intact (detects DLP/SSL-inspection proxies that modify content):
+
+| Protocol | Method |
+|----------|--------|
+| HTTP/HTTPS | Server returns SHA256 of received data; client compares |
+| FTP | Client checks remote file size after upload |
+| SFTP | Client checks remote file size after upload |
+| SMTP | Server returns SHA256 in 250 response; client compares |
+| SMB | Exit code verification only |
+| DNS / dns_resolved / ICMP | No verification (fire-and-forget) |
+
+---
+
+## How the Protocols Work
+
+- **FTP** — Data uploaded to the server's `/transfer` share with username/password auth.
+- **HTTP/HTTPS** — Data POSTed to `/post_data.php`. HTTPS uses a self-signed certificate.
+- **SMTP** — Data placed in email body (or attachment for files) and sent to the server's SMTP listener on port 25. Does not route through your mail server.
+- **SFTP** — Data uploaded over SSH file transfer protocol with password auth.
+- **SMB** — Data written to a `/TRANSFER` share created by Impacket's SimpleSMBServer.
+- **DNS (TXT)** — Data base64-encoded and chunked into DNS TXT queries sent directly to the server IP.
+- **DNS (Resolved)** — Data base64-encoded and sent as subdomain lookups (`<data>.yourdomain.com`). Requires an NS record pointing to the server.
+- **ICMP** — Data base64-encoded and sent in ICMP Echo Request payloads.
+
+---
+
+## Known Limitations
+
+- **AWS blocks port 445** at the hypervisor level regardless of security group rules. Use `--smb-port 8445` (or any non-445 port) as a workaround.
+- **ICMP, DNS, dns_resolved** have no return channel so data integrity cannot be verified.
+- **SMTP** verification may produce false negatives if an intermediate relay rewrites message headers significantly.
+- DNS and ICMP clients require root for raw socket access.

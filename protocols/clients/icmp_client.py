@@ -45,11 +45,7 @@ class Client:
             print('[*] Resolving IP of domain...')
             final_destination = socket.gethostbyname(self.remote_server)
 
-        # calcalate total packets
-        if (len(data_to_transmit) % self.length) == 0:
-            total_packets = len(data_to_transmit) / self.length
-        else:
-            total_packets = (len(data_to_transmit) / self.length) + 1
+        total_packets = -(-len(data_to_transmit) // self.length)  # ceiling division
         self.current_total = total_packets
 
         while byte_reader < len(data_to_transmit):

@@ -35,11 +35,7 @@ class Client:
         while byte_reader < len(data_to_transmit) + self.length:
             encoded_data = base64.b64encode(data_to_transmit[byte_reader:byte_reader + self.length]).decode('ascii').replace("=", ".---")
 
-            # calcalate total packets
-            if (len(data_to_transmit) % self.length) == 0:
-                total_packets = len(data_to_transmit) / self.length
-            else:
-                total_packets = (len(data_to_transmit) / self.length) + 1
+            total_packets = -(-len(data_to_transmit) // self.length)  # ceiling division
 
             sys.stdout.write(f'\r[*] Packet {packet_number}/{int(total_packets)}   ')
             sys.stdout.flush()

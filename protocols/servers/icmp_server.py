@@ -31,7 +31,7 @@ class Server:
                             self.last_packet = incoming_data
                         else:
                             helpers.received_file(self.file_name)
-                            with open(self.loot_path + self.file_name, 'a') as icmp_out:
+                            with open(self.loot_path + self.file_name, 'ab') as icmp_out:
                                 icmp_out.write(incoming_data)
                             self.last_packet = incoming_data
                 except TypeError:

@@ -65,7 +65,10 @@ class Client:
             msg.attach(part)
 
         msg_bytes = msg.as_bytes()
-        local_hash = hashlib.sha256(msg_bytes).hexdigest()
+        # Normalize to \r\n to match what smtplib sends on the wire and
+        # what aiosmtpd stores in envelope.content (server normalizes back to \n)
+        wire_bytes = msg_bytes.replace(b'\r\n', b'\n').replace(b'\n', b'\r\n')
+        local_hash = hashlib.sha256(wire_bytes.replace(b'\r\n', b'\n')).hexdigest()
 
         server = smtplib.SMTP(self.remote_server, self.port)
         try:
