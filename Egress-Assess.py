@@ -157,19 +157,71 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             print('\n[!] Sweep interrupted by user.')
 
-        print('\n' + '=' * 70)
-        print('[*] Sweep complete.\n')
-        col1, col2 = 14, 12
-        print(f'    {"Protocol":<{col1}} {"Datatype":<{col2}} {"Result"}')
-        print(f'    {"-"*col1} {"-"*col2} {"-"*8}')
+        # ANSI colors
+        G = '\033[92m'   # green
+        R = '\033[91m'   # red
+        B = '\033[1m'    # bold
+        C = '\033[96m'   # cyan
+        DIM = '\033[2m'  # dim
+        X = '\033[0m'    # reset
+
+        # Build result lookup and collect unique protocols/datatypes
+        result_map = {}
+        for proto_name, dtype_cli, success, err in results:
+            result_map.setdefault(proto_name, {})[dtype_cli] = (success, err)
+
+        protocols = sorted(result_map.keys())
+        dtypes = sorted({d for p in result_map.values() for d in p})
+
+        # Column widths
+        p_col = max(len(p) for p in protocols) + 2
+        d_col = max(max(len(d) for d in dtypes), 6) + 2
+
+        width = p_col + (d_col + 1) * len(dtypes) + 2
+        bar = '═' * width
+
+        print(f'\n{C}{B}{bar}{X}')
+        title = 'EGRESS-ASSESS SWEEP RESULTS'
+        print(f'{C}{B}{"  " + title:<{width}}{X}')
+        print(f'{C}{B}{bar}{X}\n')
+
+        # Header row
+        header = f'{B}{"Protocol":<{p_col}}{X}'
+        for d in dtypes:
+            header += f' {C}{B}{d.upper():<{d_col}}{X}'
+        print(header)
+        print(DIM + '─' * p_col + ('─' * (d_col + 1)) * len(dtypes) + X)
+
+        # Data rows
         succeeded = 0
-        for proto_name, dtype_cli, success, err in sorted(results):
-            status = 'SUCCESS' if success else f'FAILED: {err}'
-            marker = '[+]' if success else '[-]'
-            print(f'{marker} {proto_name:<{col1}} {dtype_cli:<{col2}} {status}')
-            if success:
-                succeeded += 1
-        print(f'\n[*] {succeeded}/{len(results)} combos succeeded.')
+        for proto in protocols:
+            row = f'{B}{proto:<{p_col}}{X}'
+            for d in dtypes:
+                if d in result_map[proto]:
+                    ok, _ = result_map[proto][d]
+                    if ok:
+                        row += f' {G}{"OK":<{d_col}}{X}'
+                        succeeded += 1
+                    else:
+                        row += f' {R}{"FAIL":<{d_col}}{X}'
+                else:
+                    row += f' {DIM}{"N/A":<{d_col}}{X}'
+            print(row)
+
+        # Failures detail
+        failures = [(p, d, e) for p, d, ok, e in
+                    [(p, d, *result_map[p][d]) for p in protocols for d in dtypes if d in result_map[p]]
+                    if not ok]
+        if failures:
+            print(f'\n{B}Failures{X}')
+            print(DIM + '─' * 50 + X)
+            for p, d, e in failures:
+                truncated = e[:80] + '…' if len(e) > 80 else e
+                print(f'  {R}{p}{X} / {d}  {DIM}→{X}  {truncated}')
+
+        total = len(results)
+        pct = int(succeeded / total * 100) if total else 0
+        print(f'\n{B}{succeeded}/{total}{X} combinations succeeded {DIM}({pct}%){X}\n')
         sys.exit()
 
     elif cli_parsed.server is not None:
