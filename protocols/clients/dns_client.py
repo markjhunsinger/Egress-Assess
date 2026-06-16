@@ -113,6 +113,8 @@ class Client:
             byte_reader += self.length
             packet_number += 1
 
+        print()
+
         if self.file_transfer is not False:
             while True:
                 final_packet = sr1(IP(dst=final_destination)/UDP()/DNS(
