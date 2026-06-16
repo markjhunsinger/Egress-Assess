@@ -69,8 +69,6 @@ class Client:
                          verbose=False)
                     sys.stdout.write(f'\r[*] Packet {packet_number}/{int(total_packets)}   ')
                     sys.stdout.flush()
-                    packet_number += 1
-                    byte_reader += self.length
 
                 except KeyboardInterrupt:
                     raise
