@@ -133,15 +133,17 @@ if __name__ == "__main__":
                         results.append((proto.protocol, dtype.cli, False, f'Data generation failed: {e}'))
                     continue
 
+                # Truncate to 10KB in sweep — goal is connectivity, not throughput.
+                # DNS gets a tighter cap (5KB) because it's packet-per-chunk.
                 for proto in protocols:
                     print(f'[*] Transmitting {dtype.cli} via {proto.protocol}...')
                     try:
-                        if proto.protocol in ('dns', 'dns_resolved'):
-                            data = str.encode(generated_data[:5000])
-                        elif proto.protocol in ('http', 'https'):
-                            data = str.encode(generated_data)
+                        cap = 5000 if proto.protocol in ('dns', 'dns_resolved') else 10000
+                        chunk = generated_data[:cap]
+                        if proto.protocol in ('http', 'https', 'dns', 'dns_resolved'):
+                            data = str.encode(chunk)
                         else:
-                            data = generated_data
+                            data = chunk
                         proto.transmit(data)
                         results.append((proto.protocol, dtype.cli, True, ''))
                     except SystemExit:
