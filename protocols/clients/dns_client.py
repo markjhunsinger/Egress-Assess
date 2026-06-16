@@ -8,11 +8,11 @@ http://blog.cobaltstrike.com/2013/06/20/thatll-never-work-we-dont-allow-port-53-
 
 import base64
 import hashlib
-import re
 import socket
 import sys
 from common import helpers
 import struct
+from dnslib import DNSRecord, QTYPE as DnsQTYPE
 from scapy.all import *
 
 
@@ -132,21 +132,26 @@ class Client:
                     break
                 '''
         else:
-            verify_resp = sr1(
-                IP(dst=final_destination)/UDP()/DNS(
-                    id=15, opcode=0,
-                    qd=[DNSQR(qname=b'EAVERIFY', qtype='TXT')], aa=1, qr=0),
-                verbose=False, timeout=5)
-            if verify_resp and verify_resp.haslayer(DNS) and verify_resp[DNS].ancount > 0:
-                rdata = verify_resp[DNS].an.rdata
-                if isinstance(rdata, bytes):
-                    m = re.search(rb'[0-9a-f]{64}', rdata)
-                    if m:
-                        server_hash = m.group(0).decode()
-                        if server_hash != expected_hash:
-                            raise RuntimeError(
-                                f'Integrity check failed: '
-                                f'client={expected_hash[:16]}… server={server_hash[:16]}…')
-                        return
+            # Use a real UDP socket so the OS can receive the reply (raw scapy
+            # sockets don't reliably capture inbound packets on all platforms).
+            verify_query = DNSRecord.question('EAVERIFY', 'TXT')
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.settimeout(5)
+            try:
+                sock.sendto(verify_query.pack(), (final_destination, self.port))
+                resp_data, _ = sock.recvfrom(4096)
+            except (socket.timeout, TimeoutError):
+                raise RuntimeError('no verification response from DNS server')
+            finally:
+                sock.close()
+            resp = DNSRecord.parse(resp_data)
+            for rr in resp.rr:
+                if rr.rtype == DnsQTYPE.TXT:
+                    server_hash = b''.join(rr.rdata.data).decode('ascii').strip()
+                    if server_hash != expected_hash:
+                        raise RuntimeError(
+                            f'Integrity check failed: '
+                            f'client={expected_hash[:16]}… server={server_hash[:16]}…')
+                    return
             raise RuntimeError('no verification response from DNS server')
         return
