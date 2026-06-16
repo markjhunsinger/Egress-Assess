@@ -107,25 +107,29 @@ if __name__ == "__main__":
         datatypes = list(the_conductor.datatypes.values())
         results = []
 
-        for dtype in datatypes:
-            print(f'[*] Generating {dtype.description} data...')
-            try:
-                generated_data = dtype.generate_data()
-            except Exception as e:
-                for proto in protocols:
-                    results.append((proto.protocol, dtype.cli, False, f'Data generation failed: {e}'))
-                continue
-
-            for proto in protocols:
-                print(f'[*] Transmitting {dtype.cli} via {proto.protocol}...')
+        interrupted = False
+        try:
+            for dtype in datatypes:
+                print(f'[*] Generating {dtype.description} data...')
                 try:
-                    data = str.encode(generated_data) if proto.protocol in ('http', 'https', 'dns', 'dns_resolved') else generated_data
-                    proto.transmit(data)
-                    results.append((proto.protocol, dtype.cli, True, ''))
-                except SystemExit:
-                    results.append((proto.protocol, dtype.cli, False, 'sys.exit() called'))
+                    generated_data = dtype.generate_data()
                 except Exception as e:
-                    results.append((proto.protocol, dtype.cli, False, str(e)))
+                    for proto in protocols:
+                        results.append((proto.protocol, dtype.cli, False, f'Data generation failed: {e}'))
+                    continue
+
+                for proto in protocols:
+                    print(f'[*] Transmitting {dtype.cli} via {proto.protocol}...')
+                    try:
+                        data = str.encode(generated_data) if proto.protocol in ('http', 'https', 'dns', 'dns_resolved') else generated_data
+                        proto.transmit(data)
+                        results.append((proto.protocol, dtype.cli, True, ''))
+                    except SystemExit:
+                        results.append((proto.protocol, dtype.cli, False, 'sys.exit() called'))
+                    except Exception as e:
+                        results.append((proto.protocol, dtype.cli, False, str(e)))
+        except KeyboardInterrupt:
+            print('\n[!] Sweep interrupted by user.')
 
         print('\n' + '=' * 60)
         print('[*] Sweep complete.\n')
