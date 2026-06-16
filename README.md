@@ -36,14 +36,14 @@ Sweep mode tests all protocols and data types automatically and produces a summa
 **Server** — start all servers at once:
 
 ```bash
-sudo python3 Egress-Assess.py --server --sweep --username testuser --password pass123 \
+sudo -E python3 Egress-Assess.py --server --sweep --username testuser --password pass123 \
     --sftp-port 2222 --smb-port 8445
 ```
 
 **Client** — transmit all data types over all protocols:
 
 ```bash
-sudo python3 Egress-Assess.py --client --sweep --ip <server-ip> \
+sudo -E python3 Egress-Assess.py --client --sweep --ip <server-ip> \
     --username testuser --password pass123 \
     --sftp-port 2222 --smb-port 8445
 ```
@@ -64,13 +64,13 @@ The client prints a colour-coded matrix showing **Allowed** / **Blocked** per pr
 **Server:**
 
 ```bash
-sudo python3 Egress-Assess.py --server <protocol> --username testuser --password pass123
+sudo -E python3 Egress-Assess.py --server <protocol> --username testuser --password pass123
 ```
 
 **Client:**
 
 ```bash
-sudo python3 Egress-Assess.py --client <protocol> --ip <server-ip> \
+sudo -E python3 Egress-Assess.py --client <protocol> --ip <server-ip> \
     --username testuser --password pass123 --datatype <datatype>
 ```
 
@@ -78,20 +78,24 @@ sudo python3 Egress-Assess.py --client <protocol> --ip <server-ip> \
 
 ```bash
 # FTP
-sudo python3 Egress-Assess.py --server ftp --username testuser --password pass123
-sudo python3 Egress-Assess.py --client ftp --ip 10.0.0.1 --username testuser --password pass123 --datatype creditcard
+sudo -E python3 Egress-Assess.py --server ftp --username testuser --password pass123
+sudo -E python3 Egress-Assess.py --client ftp --ip 10.0.0.1 --username testuser --password pass123 --datatype cc
 
 # HTTPS
-sudo python3 Egress-Assess.py --server https
-sudo python3 Egress-Assess.py --client https --ip 10.0.0.1 --datatype ssn
+sudo -E python3 Egress-Assess.py --server https
+sudo -E python3 Egress-Assess.py --client https --ip 10.0.0.1 --datatype ssn
 
 # DNS (requires root)
-sudo python3 Egress-Assess.py --server dns
-sudo python3 Egress-Assess.py --client dns --ip 10.0.0.1 --datatype creditcard
+sudo -E python3 Egress-Assess.py --server dns
+sudo -E python3 Egress-Assess.py --client dns --ip 10.0.0.1 --datatype cc
 
 # SFTP on alternate port
-sudo python3 Egress-Assess.py --server sftp --username testuser --password pass123 --server-port 2222
-sudo python3 Egress-Assess.py --client sftp --ip 10.0.0.1 --username testuser --password pass123 --client-port 2222 --datatype creditcard
+sudo -E python3 Egress-Assess.py --server sftp --username testuser --password pass123 --server-port 2222
+sudo -E python3 Egress-Assess.py --client sftp --ip 10.0.0.1 --username testuser --password pass123 --client-port 2222 --datatype cc
+
+# SMB on alternate port
+sudo -E python3 Egress-Assess.py --server smb --username testuser --password pass123 --server-port 8445
+sudo -E python3 Egress-Assess.py --client smb --ip 10.0.0.1 --username testuser --password pass123 --client-port 8445 --datatype cc
 ```
 
 ---
@@ -116,7 +120,7 @@ List all: `python3 Egress-Assess.py --list-clients` / `--list-servers`
 
 | Type | Description |
 |------|-------------|
-| `creditcard` | Credit card numbers |
+| `cc` | Credit card numbers |
 | `ssn` | US Social Security Numbers |
 | `ni` | UK National Insurance Numbers |
 | `identity` | Combination identity data |
@@ -156,6 +160,8 @@ The following protocols verify that data arrived on the server intact (detects D
 ## Known Limitations
 
 - **AWS blocks port 445** at the hypervisor level regardless of security group rules. Use `--smb-port 8445` (or any non-445 port) as a workaround.
+- **FTP passive mode requires the server to advertise its public IP.** On EC2 this is auto-detected via instance metadata. On other NAT'd hosts, pass `--ip <public-ip>` to the server command so PASV responses contain the correct address.
+- **`sudo -E`** is required when running inside a virtualenv so that `sudo` inherits the venv `PATH`. Alternatively, invoke the venv Python directly: `sudo egress-venv/bin/python3 Egress-Assess.py`.
 - **ICMP, DNS, dns_resolved** have no return channel so data integrity cannot be verified.
 - **SMTP** verification may produce false negatives if an intermediate relay rewrites message headers significantly.
 - DNS and ICMP clients require root for raw socket access.
