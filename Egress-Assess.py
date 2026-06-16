@@ -131,7 +131,7 @@ if __name__ == "__main__":
         interrupted = False
         try:
             for dtype in datatypes:
-                print(f'[*] Generating {dtype.description} data...')
+                print(f'\n[*] Generating {dtype.description} data...')
                 try:
                     generated_data = dtype.generate_data()
                 except Exception as e:
