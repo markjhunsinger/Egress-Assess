@@ -170,11 +170,18 @@ if __name__ == "__main__":
         for proto_name, dtype_cli, success, err in results:
             result_map.setdefault(proto_name, {})[dtype_cli] = (success, err)
 
+        _display = {
+            'dns': 'DNS (TXT)', 'dns_resolved': 'DNS (A)',
+            'ftp': 'FTP', 'http': 'HTTP', 'https': 'HTTPS',
+            'icmp': 'ICMP', 'sftp': 'SFTP', 'smb': 'SMB', 'smtp': 'SMTP',
+        }
+        def pname(p): return _display.get(p, p.upper())
+
         protocols = sorted(result_map.keys())
         dtypes = sorted({d for p in result_map.values() for d in p})
 
         # Column widths
-        p_col = max(len(p) for p in protocols) + 2
+        p_col = max(len(pname(p)) for p in protocols) + 2
         d_col = max(max(len(d) for d in dtypes), 6) + 2
 
         width = p_col + (d_col + 1) * len(dtypes) + 2
@@ -195,7 +202,7 @@ if __name__ == "__main__":
         # Data rows
         succeeded = 0
         for proto in protocols:
-            row = f'{B}{proto:<{p_col}}{X}'
+            row = f'{B}{pname(proto):<{p_col}}{X}'
             for d in dtypes:
                 if d in result_map[proto]:
                     ok, _ = result_map[proto][d]
@@ -217,7 +224,7 @@ if __name__ == "__main__":
             print(DIM + '─' * 50 + X)
             for p, d, e in failures:
                 truncated = e[:80] + '…' if len(e) > 80 else e
-                print(f'  {R}{p}{X} / {d}  {DIM}→{X}  {truncated}')
+                print(f'  {R}{pname(p)}{X} / {d.upper()}  {DIM}→{X}  {truncated}')
 
         total = len(results)
         pct = int(succeeded / total * 100) if total else 0
