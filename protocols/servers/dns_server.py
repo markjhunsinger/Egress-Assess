@@ -188,7 +188,7 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
             count_str = stripped[8:]
             if count_str.isdigit():
                 expected_count = int(count_str)
-                deadline = time.time() + 3.0
+                deadline = time.time() + 5.0
                 while len(DATA_BUFFER) < expected_count and time.time() < deadline:
                     time.sleep(0.01)
             server_hash = hashlib.sha256(b''.join(DATA_BUFFER)).hexdigest()

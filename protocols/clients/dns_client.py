@@ -135,7 +135,7 @@ class Client:
             packets_sent = packet_number - 1
             verify_query = DNSRecord.question(f'EAVERIFY{packets_sent}', 'TXT')
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sock.settimeout(5)
+            sock.settimeout(10)
             try:
                 sock.sendto(verify_query.pack(), (final_destination, self.port))
                 resp_data, _ = sock.recvfrom(4096)
