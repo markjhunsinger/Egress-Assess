@@ -8,14 +8,28 @@ from pyftpdlib.servers import FTPServer
 
 
 def _detect_public_ip():
-    # EC2 instance metadata (fast, no internet hop)
-    for url in ('http://169.254.169.254/latest/meta-data/public-ipv4',
-                'https://api.ipify.org',
-                'https://checkip.amazonaws.com'):
-        try:
-            return urllib.request.urlopen(url, timeout=2).read().decode().strip()
-        except Exception:
-            continue
+    # EC2 IMDSv1 — link-local IP, no DNS needed
+    try:
+        return urllib.request.urlopen(
+            'http://169.254.169.254/latest/meta-data/public-ipv4', timeout=2
+        ).read().decode().strip()
+    except Exception:
+        pass
+    # EC2 IMDSv2 — token-gated, still no DNS
+    try:
+        token_req = urllib.request.Request(
+            'http://169.254.169.254/latest/api/token',
+            headers={'X-aws-ec2-metadata-token-ttl-seconds': '21600'},
+            method='PUT'
+        )
+        token = urllib.request.urlopen(token_req, timeout=2).read().decode().strip()
+        ip_req = urllib.request.Request(
+            'http://169.254.169.254/latest/meta-data/public-ipv4',
+            headers={'X-aws-ec2-metadata-token': token}
+        )
+        return urllib.request.urlopen(ip_req, timeout=2).read().decode().strip()
+    except Exception:
+        pass
     return None
 
 
