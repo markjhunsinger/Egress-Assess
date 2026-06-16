@@ -72,6 +72,7 @@ class Client:
 
         server = smtplib.SMTP(self.remote_server, self.port)
         try:
+            server.ehlo()
             server.mail('tester@egress-assess.com')
             server.rcpt('server@egress-assess.com')
             code, response = server.data(msg_bytes)
