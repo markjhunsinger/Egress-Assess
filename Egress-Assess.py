@@ -200,10 +200,10 @@ if __name__ == "__main__":
                 if d in result_map[proto]:
                     ok, _ = result_map[proto][d]
                     if ok:
-                        row += f' {G}{"OK":<{d_col}}{X}'
+                        row += f' {G}{"Allowed":<{d_col}}{X}'
                         succeeded += 1
                     else:
-                        row += f' {R}{"FAIL":<{d_col}}{X}'
+                        row += f' {R}{"Blocked":<{d_col}}{X}'
                 else:
                     row += f' {DIM}{"N/A":<{d_col}}{X}'
             print(row)
