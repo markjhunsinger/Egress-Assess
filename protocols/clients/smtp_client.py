@@ -5,6 +5,7 @@ http://pymotw.com/2/smtpd/
 
 """
 
+import hashlib
 import smtplib
 import email.utils
 from email import encoders
@@ -63,10 +64,22 @@ class Client:
             part.add_header('Content-Disposition', 'attachment; filename=' + self.file_transfer)
             msg.attach(part)
 
+        msg_bytes = msg.as_bytes()
+        local_hash = hashlib.sha256(msg_bytes).hexdigest()
+
         server = smtplib.SMTP(self.remote_server, self.port)
         try:
-            server.sendmail('tester@egress-assess.com', ['server@egress-assess.com'], msg.as_string())
+            server.mail('tester@egress-assess.com')
+            server.rcpt('server@egress-assess.com')
+            code, response = server.data(msg_bytes)
         finally:
             server.quit()
+
+        if code != 250:
+            raise RuntimeError(f'SMTP DATA rejected: {code} {response}')
+
+        server_hash = response.decode().strip()
+        if server_hash and server_hash != local_hash:
+            raise RuntimeError('Integrity check failed: data was modified in transit (DLP/proxy?)')
 
         print('[*] Data transmitted!')

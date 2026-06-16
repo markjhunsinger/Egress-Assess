@@ -1,4 +1,5 @@
 import base64
+import hashlib
 from email.parser import BytesParser
 import time
 from common import helpers
@@ -15,10 +16,8 @@ class CustomSMTPHandler:
         rcpttos = envelope.rcpt_tos
         data = envelope.content  # bytes
 
-        print('Receiving message from:', peer)
-        print('Message addressed from:', mailfrom)
-        print('Message addressed to  :', rcpttos)
-        print('Message length        :', len(data))
+        normalized = data.replace(b'\r\n', b'\n')
+        data_hash = hashlib.sha256(normalized).hexdigest()
 
         p = BytesParser()
         msgobj = p.parsebytes(data)
@@ -40,7 +39,7 @@ class CustomSMTPHandler:
                     email_file.write(b'METADATA: File from - ' + str(peer).encode() + b'\n\n')
                     email_file.write(data)
 
-        return '250 Message accepted for delivery'
+        return f'250 {data_hash}'
 
     @staticmethod
     def email_parse_attachment(message_part):
