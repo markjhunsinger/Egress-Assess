@@ -182,8 +182,12 @@ def writeout_text_data(incoming_data):
     return file_name
 
 
-def check_port_available(port):
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+_UDP_PROTOCOLS = {'dns'}
+
+
+def check_port_available(port, udp=False):
+    kind = socket.SOCK_DGRAM if udp else socket.SOCK_STREAM
+    s = socket.socket(socket.AF_INET, kind)
     try:
         s.bind(('0.0.0.0', port))
         return True
@@ -204,7 +208,9 @@ def preflight_server_sweep(server_list):
     for server in server_list:
         if not hasattr(server, 'port'):
             continue  # ICMP — no port
-        if not check_port_available(server.port):
-            errors.append(f'Port {server.port} in use ({server.protocol})')
+        udp = server.protocol in _UDP_PROTOCOLS
+        if not check_port_available(server.port, udp=udp):
+            proto_label = 'UDP' if udp else 'TCP'
+            errors.append(f'Port {server.port}/{proto_label} in use ({server.protocol})')
 
     return errors

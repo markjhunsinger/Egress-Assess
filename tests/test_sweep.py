@@ -95,7 +95,23 @@ def test_preflight_server_sweep_detects_blocked_port(tmp_path):
     try:
         with patch('common.helpers.ea_path', return_value=str(tmp_path)):
             errors = preflight_server_sweep([mock_server])
-        assert any('19997' in e for e in errors)
+        assert any('19997' in e and 'TCP' in e for e in errors)
+    finally:
+        s.close()
+
+
+def test_preflight_server_sweep_detects_blocked_udp_port(tmp_path):
+    from common.helpers import preflight_server_sweep
+    (tmp_path / 'server.pem').write_text('fake')
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.bind(('0.0.0.0', 19996))
+    mock_server = MagicMock()
+    mock_server.protocol = 'dns'
+    mock_server.port = 19996
+    try:
+        with patch('common.helpers.ea_path', return_value=str(tmp_path)):
+            errors = preflight_server_sweep([mock_server])
+        assert any('19996' in e and 'UDP' in e for e in errors)
     finally:
         s.close()
 
