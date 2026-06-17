@@ -48,7 +48,7 @@ FILE_DICT = {}
 FILE_NAME = ""
 FILE_STATUS = "0"
 LAST_PACKET = ""
-DATA_BUFFER = []  # accumulates received text-mode bytes for SHA256 verification
+DATA_BUFFER = {}  # {seq: chunk} — ordered accumulator for SHA256 verification
 
 
 def set_file_name():
@@ -191,7 +191,8 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
                 deadline = time.time() + 5.0
                 while len(DATA_BUFFER) < expected_count and time.time() < deadline:
                     time.sleep(0.01)
-            server_hash = hashlib.sha256(b''.join(DATA_BUFFER)).hexdigest()
+            sorted_chunks = [DATA_BUFFER[k] for k in sorted(DATA_BUFFER.keys())]
+            server_hash = hashlib.sha256(b''.join(sorted_chunks)).hexdigest()
             DATA_BUFFER.clear()
             return server_hash
 
@@ -201,10 +202,19 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
                 self.write_file(file_name)
                 return None
 
-            decoded = base64.b64decode(encoded_qname)
+            # Data packets sent by dns_client (non-file-transfer) are prefixed with a
+            # 4-digit zero-padded sequence number so the server can reconstruct the
+            # original order regardless of thread scheduling.
+            qname_clean = stripped
+            if len(qname_clean) >= 4 and qname_clean[:4].isdigit():
+                seq = int(qname_clean[:4])
+                decoded = base64.b64decode(qname_clean[4:])
+            else:
+                seq = len(DATA_BUFFER)
+                decoded = base64.b64decode(encoded_qname)
 
             if self.preamble not in decoded:
-                DATA_BUFFER.append(decoded)
+                DATA_BUFFER[seq] = decoded
                 self.write_file(FILE_NAME, 'a', data=decoded.decode('latin-1'))
                 return None
 

