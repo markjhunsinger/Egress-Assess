@@ -29,9 +29,9 @@ class Client:
             self.file_transfer = False
         else:
             if '/' in cli_object.file:
-                self.file_transfer = cli_object.file
-            else:
                 self.file_transfer = cli_object.file.split('/')[-1]
+            else:
+                self.file_transfer = cli_object.file
 
     def transmit(self, data_to_transmit):
 

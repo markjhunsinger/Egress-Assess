@@ -31,5 +31,5 @@ class Server:
                 ("0.0.0.0", self.port), base_handler.GetHandler)
             server80.serve_forever()
         except socket.error:
-            print(f'f[*]Error: Port {self.port} is currently in use.')
+            print(f'[*] Error: Port {self.port} is currently in use.')
             sys.exit()

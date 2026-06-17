@@ -34,9 +34,9 @@ class Client:
             self.file_transfer = False
         else:
             if '/' in cli_object.file:
-                self.file_transfer = cli_object.file
-            else:
                 self.file_transfer = cli_object.file.split('/')[-1]
+            else:
+                self.file_transfer = cli_object.file
 
     # transmit is the only required function within the object.  It is what
     # called by the framework to transmit data.  However, you can create as 

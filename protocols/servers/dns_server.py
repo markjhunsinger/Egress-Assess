@@ -116,7 +116,7 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
 
     @staticmethod
     def clear_globals():
-        global FILE_DICT, FILE_NAME, LAST_PACKET, DATA_BUFFER
+        global FILE_DICT, FILE_NAME, LAST_PACKET, FILE_STATUS, DATA_BUFFER
         FILE_DICT = {}
         FILE_STATUS = "0"
         LAST_PACKET = ""
