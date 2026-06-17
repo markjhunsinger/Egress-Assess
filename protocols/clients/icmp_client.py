@@ -1,16 +1,4 @@
-"""
-
-This is the template that should be used for client modules.
-A brief description of the client module can/should be placed
-up here.  All necessary imports should be placed between the
-comments and class declaration.
-
-Finally, be sure to rename your client module to a .py file
-
-"""
-
 import base64
-import re
 import socket
 import sys
 
