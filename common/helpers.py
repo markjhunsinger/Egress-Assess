@@ -43,7 +43,7 @@ def cli_parser():
     data_content = parser.add_argument_group('Data Content Options')
     data_content.add_argument('--file', default=None, metavar='/tmp/test.txt', help='Path to file to extract.')
     data_content.add_argument('--datatype', default=None, metavar='[ssn]', help='Generate fake data for the specified type.')
-    data_content.add_argument('--data-size', default=1, type=int, help='Number of megs to send, default is 1MB')
+    data_content.add_argument('--data-size', default=1, type=int, help='Number of megs to send, default is 1MB. Not supported in --sweep mode.')
     data_content.add_argument('--list-datatypes', default=False, action='store_true', help='List all supported data types that can be generated.')
 
     sweep_options = parser.add_argument_group('Sweep Mode')
@@ -75,6 +75,10 @@ def cli_parser():
     if args.sweep:
         if args.server is not None and args.client is not None:
             print('[*] Error: --sweep accepts --server or --client, not both.')
+            sys.exit(1)
+        if args.data_size != 1:
+            print('[*] Error: --data-size is not supported in --sweep mode (sweep uses a fixed 10 KB cap per protocol).')
+            print('[*] Use single-protocol mode to test with a custom data size.')
             sys.exit(1)
         if args.server is None and args.client is None:
             print('[*] Error: --sweep requires --server or --client.')

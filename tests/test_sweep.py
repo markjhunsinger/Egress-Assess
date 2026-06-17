@@ -32,6 +32,18 @@ def test_sweep_client_requires_ip_username_password():
             helpers.cli_parser()
 
 
+def test_sweep_rejects_data_size():
+    """--sweep with --data-size must exit."""
+    with patch('sys.argv', ['Egress-Assess.py', '--sweep', '--server',
+                            '--username', 'u', '--password', 'p',
+                            '--data-size', '5']):
+        import importlib
+        from common import helpers
+        importlib.reload(helpers)
+        with pytest.raises(SystemExit):
+            helpers.cli_parser()
+
+
 def test_sweep_client_does_not_require_datatype():
     """--sweep --client must not require --datatype."""
     with patch('sys.argv', ['Egress-Assess.py', '--sweep', '--client',
